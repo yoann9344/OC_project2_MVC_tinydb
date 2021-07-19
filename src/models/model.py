@@ -1,77 +1,10 @@
-import datetime
-from abc import ABCMeta, ABC
-from collections import defaultdict
-from functools import partial
+from abc import ABCMeta
 
 from tinydb import TinyDB, Query
 from tinydb.queries import QueryInstance
 
-
-class Field(ABC):
-    _type = None  # must be set
-
-    def __init__(self, null_values={None}, is_nullable=False, default=None):
-        self.null_values = null_values
-        self.is_nullable = is_nullable
-        self._default = default
-
-    @property
-    def default(self):
-        if self._default in self.null_values and not self.is_nullable:
-            raise ValueError(
-                f'Field {self} is not nullable and has no default value')
-        return self._default
-
-    def validate(self, value):
-        if value in self.null_values:
-            if not self.is_nullable:
-                raise ValueError(
-                    f'{self.__class__.__name__} can not be null')
-        if not isinstance(value, self._type):
-            raise TypeError(
-                f'{self.__class__.__name__} must be instance of {self._type} '
-                f'not type {value}'
-            )
-
-    def serialize(self, value):
-        return value
-
-
-class FieldInteger(Field):
-    _type = int
-
-
-class FieldFloating(Field):
-    _type = float
-
-
-class FieldString(Field):
-    _type = str
-
-
-class FieldDate(Field):
-    _type = datetime.date
-
-
-class App():
-    def __init__(self):
-        self.loaded_models = set()
-        self.pending_model_operations = defaultdict(list)
-
-    def lazy_model_operation(self, func, model_key: str):
-        model_key = model_key.lower()
-        if model_key in self.loaded_models:
-            func()
-        else:
-            self.pending_model_operations[model_key].append(func)
-
-    def register_model(self, model_name):
-        self.loaded_models.add(model_name)
-        for func in self.pending_model_operations[model_name]:
-            func()
-
-
-app = App()
+from ..app import app
+from .fields import Field, ForeignKey, One2Many
 
 
 class ModelMeta(ABCMeta):
@@ -231,63 +164,7 @@ class Model(metaclass=ModelMeta):
         self._table.remove(doc_ids=[self.id])
 
 
-class RelationalField(Field):
-    def __init__(self, model: str or Model, *args, **kwargs):
-        if isinstance(model, str):
-            def get_model_from_string(model_name, field):
-                field._type = ModelMeta.models[model_name.lower()]
-            app.lazy_model_operation(
-                partial(get_model_from_string, model, self),
-                model
-            )
-        elif issubclass(model, Model):
-            self._type = model
-        else:
-            raise TypeError('Relational Model is neither a str or a Model')
-        super().__init__(*args, **kwargs)
-
-
-class ForeignKey(RelationalField):
-    _type = Model
-
-    def serialize(self, value):
-        return value.id
-
-    def __init__(self, model, related_name: str = None, *args, **kwargs):
-        self.related_name = related_name
-        super().__init__(model, *args, **kwargs)
-
-
-class One2Many(RelationalField):
-    _type = Model
-
-    def __init__(self, model, *args, **kwargs):
-        super().__init__(model, *args, **kwargs)
-
-    def serialize(self, value):
-        serialized = {
-            '_table': self._type.__name__.lower(),
-            '_list': list(map(lambda o: o.id, value))
-        }
-        if any(id_ is None for id_ in serialized['_list']):
-            raise ValueError(f'id must integer {value}')
-        return serialized
-
-    def validate(self, value):
-        if (
-            not isinstance(value, list)
-            or not all(isinstance(obj, self._type) for obj in value)
-        ):
-            raise TypeError(
-                f'{self.__class__.__name__} must be type of List[{self._type}]'
-                f' not {value}'
-            )
-
-
-class Many2Many(One2Many):
-    pass
-
-
+from .fields import FieldInteger
 class Player(Model):
     rank = FieldInteger(is_nullable=True)
     # tournament = Many2Many(Tournaments)
