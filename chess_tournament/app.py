@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import chess_tournament.main
+
 
 class App():
     def __init__(self):
@@ -20,3 +22,7 @@ class App():
 
 
 app = App()
+
+
+if __name__ == '__main__':
+    chess_tournament.main.run()

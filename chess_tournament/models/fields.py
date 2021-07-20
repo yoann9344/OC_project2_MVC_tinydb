@@ -2,38 +2,9 @@ import datetime
 from abc import ABC
 from functools import partial
 
-from ..app import app
-from .model import ModelMeta, Model
-
-
-class Field(ABC):
-    _type = None  # must be set
-
-    def __init__(self, null_values={None}, is_nullable=False, default=None):
-        self.null_values = null_values
-        self.is_nullable = is_nullable
-        self._default = default
-
-    @property
-    def default(self):
-        if self._default in self.null_values and not self.is_nullable:
-            raise ValueError(
-                f'Field {self} is not nullable and has no default value')
-        return self._default
-
-    def validate(self, value):
-        if value in self.null_values:
-            if not self.is_nullable:
-                raise ValueError(
-                    f'{self.__class__.__name__} can not be null')
-        if not isinstance(value, self._type):
-            raise TypeError(
-                f'{self.__class__.__name__} must be instance of {self._type} '
-                f'not type {value}'
-            )
-
-    def serialize(self, value):
-        return value
+from chess_tournament.app import app
+from chess_tournament.models.model import ModelMeta, Model, Field
+# import chess_tournament.models as chess_fields
 
 
 class RelationalField(Field):
@@ -67,7 +38,8 @@ class One2Many(RelationalField):
     _type = Model
 
     def __init__(self, model, *args, **kwargs):
-        super().__init__(model, *args, **kwargs)
+        super().__init__(model, default=[], *args, **kwargs)
+        # super().__init__(model, *args, **kwargs)
 
     def serialize(self, value):
         serialized = {

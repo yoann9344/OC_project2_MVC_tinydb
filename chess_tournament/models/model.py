@@ -1,10 +1,42 @@
-from abc import ABCMeta
+from abc import ABC, ABCMeta
 
 from tinydb import TinyDB, Query
 from tinydb.queries import QueryInstance
 
-from ..app import app
-from .fields import Field, ForeignKey, One2Many
+from chess_tournament.app import app
+import chess_tournament.models.fields as chess_fields
+# from chess_tournament.models import ForeignKey, One2Many
+# from chess_tournament.models
+
+
+class Field(ABC):
+    _type = None  # must be set
+
+    def __init__(self, null_value=None, is_nullable=False, default=None):
+        self.null_value = null_value
+        self.is_nullable = is_nullable
+        self._default = default
+
+    @property
+    def default(self):
+        if self._default == self.null_value and not self.is_nullable:
+            raise ValueError(
+                f'Field {self} is not nullable and has no default value')
+        return self._default
+
+    def validate(self, value):
+        if value == self.null_value:
+            if not self.is_nullable:
+                raise ValueError(
+                    f'{self.__class__.__name__} can not be null')
+        if not isinstance(value, self._type):
+            raise TypeError(
+                f'{self.__class__.__name__} must be instance of {self._type} '
+                f'not type {value}'
+            )
+
+    def serialize(self, value):
+        return value
 
 
 class ModelMeta(ABCMeta):
@@ -104,7 +136,8 @@ class Model(metaclass=ModelMeta):
             if not any(obj.id == self.id for obj in relations):
                 relations.append(self)
                 related_obj._fields.update(
-                    {field.related_name: One2Many(self.__class__)}
+                    {field.related_name: chess_fields.One2Many(self.__class__)}
+                    # {field.related_name: One2Many(self.__class__)}
                 )
                 setattr(related_obj, field.related_name, relations)
                 related_obj.save()
@@ -112,7 +145,8 @@ class Model(metaclass=ModelMeta):
 
     def check_field_type(self, name, value):
         field = self._fields[name]
-        if isinstance(field, ForeignKey):
+        # if isinstance(field, ForeignKey):
+        if isinstance(field, chess_fields.ForeignKey):
             if isinstance(value, int):
                 value = self.create_related_relationship(field, value)
             elif isinstance(value, field._type):
@@ -162,27 +196,3 @@ class Model(metaclass=ModelMeta):
 
     def delete(self):
         self._table.remove(doc_ids=[self.id])
-
-
-from .fields import FieldInteger
-class Player(Model):
-    rank = FieldInteger(is_nullable=True)
-    # tournament = Many2Many(Tournaments)
-
-    def increase_rank(self):
-        self.rank += 1
-
-
-class Ref(Model):
-    e = ForeignKey('Element', related_name='ref')
-    p = ForeignKey('Player', related_name='ref')
-
-
-class Element(Model):
-    pass
-
-
-p1 = Player(rank=1)
-p2 = Player(rank=2)
-e1 = Element()
-Ref(e=e1, p=p1)
