@@ -7,9 +7,9 @@ from chess_tournament.models import Model
 
 
 class TableView(Panel):
-    def __init__(self, headers: list[str], rows: list[dict] or list[Model], title=None, border_color='blue', selection=None):
+    def __init__(self, headers: list[str], rows: list[dict] or list[Model], title=None, border_style='blue', selection=None):
         self.style = ''
-        table = Table(style=self.style, title=title, border_style=border_color)
+        table = Table(style=self.style, title=title, border_style=None)
         for h in headers:
             table.add_column(h)
         for i, row in enumerate(rows):
@@ -38,6 +38,7 @@ class TableView(Panel):
                     style=color
                 )
         self.rows = table.rows
+        self.columns = table.columns
         super().__init__(
             Align.center(
                 table,
@@ -45,7 +46,7 @@ class TableView(Panel):
             ),
             style=self.style,
             title=title,
-            border_style='blue',
+            border_style=border_style,
         )
 
 

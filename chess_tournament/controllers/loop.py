@@ -1,4 +1,5 @@
 import copy
+import operator
 import time
 from abc import ABC, abstractmethod
 from typing import Type
@@ -24,13 +25,11 @@ logging.basicConfig(filename='logs.log', level=logging.INFO)
 
 
 class Browser():
-    def __init__(self, page: Type['Page']):
-        self.history = [{
-            'cls': page,
-            'kwargs': {},
-        }]
+    def __init__(self, start_page: Type['Page']):
+        self.history = [start_page]
         self.index = 0
         self.need_update = False
+        self._move()
 
     def _check_index_value(self):
         len_history = len(self.history)
@@ -42,24 +41,19 @@ class Browser():
     def _move(self):
         self._check_index_value()
         # self._page.on_page_change()
-        target = self.history[self.index]
-        page = target['cls'](self, **target['kwargs'])
-        self._page = page
+        self._page = self.history[self.index]
         self.need_update = True
 
-    def go_to(self, page: Type['Page'], **kwargs):
+    def go_to(self, page: 'Page'):
         self._check_index_value()
         len_history = len(self.history)
         current = self.history[self.index]
-        if page == current:
-            current['kwargs'] = kwargs
+        if id(page) == id(current):
+            pass
         else:
             if self.index < len_history - 1:
                 self.history = self.history[:self.index+1]
-            self.history.append({
-                'cls': page,
-                'kwargs': kwargs
-            })
+            self.history.append(page)
             self.index += 1
             self._move()
 
@@ -81,9 +75,15 @@ class Browser():
 
 
 class LayoutController(ABC):
+    border_style = 'blue'
+
     @abstractmethod
     def update(self, layout: Layout):
         pass
+
+    def set_border_style(self, value=None):
+        self.border_style = value or LayoutController.border_style
+        self.panel_view.border_style = self.border_style
 
 
 class RowLayoutController(LayoutController):
@@ -117,20 +117,51 @@ class TableLayoutController(LayoutController):
         self.shortcuts = {
             'k': self.up,
             'j': self.down,
+            't': self.sort,
         }
         self.index = -1
         self.model = model
         self.headers = headers or ['id'] + list(self.model._fields.keys())
+        self.sort_by = self.headers[0]
+        self.sort_index = 0
+        self.data: list[models.Model] = self.model.all()
+        self.table = TableView(
+            self.headers,
+            self.data,
+            border_style=self.border_style,
+        )
+        self.panel_view = self.table
 
     def update(self, layout: Layout):
+        current_row_id = None
+        if self.index != -1:
+            selection = self.index
+            current_row_id = self.data[selection].id
+        else:
+            selection = None
         self.data: list[models.Model] = self.model.all()
+        self.data.sort(key=operator.attrgetter(self.sort_by))
+        if current_row_id is not None:
+            self.index = [x.id for x in self.data].index(current_row_id)
+            selection = self.index
         selection = self.index if self.index != -1 else None
         self.table = TableView(
             self.headers,
             self.data,
-            selection=selection
+            selection=selection,
+            border_style=self.border_style,
         )
+        self.table.columns[self.sort_index].header_style = 'blue'
         layout.update(self.table)
+
+    def sort(self):
+        index = self.sort_index + 1
+        if index >= len(self.headers):
+            self.sort_index = 0
+        else:
+            self.sort_index = index
+        self.sort_by = self.headers[self.sort_index]
+        self.page.update_by_controller(self)
 
     def _move(self, increment):
         # reset previous row's color
@@ -150,19 +181,7 @@ class TableLayoutController(LayoutController):
         lc = self.info_layout_controller
         if lc is not None:
             lc.row = self.data[self.index]
-            self.page.update()
-        # self.info_layout_controller.l
-        # self._show_info()
-
-    def _show_info(self):
-        row_object: 'Player' = self.data[self.index]
-        keys = row_object._fields.keys(['id'] + list(self.model._fields.keys()))
-        values = (getattr(row_object, k) for k in keys)
-        self.table_info = TableView(
-            ['key', 'value'],
-            list(zip(keys, values)),
-        )
-        self.info_layout.update(self.table_info)
+            self.page.update_by_controller(lc)
 
     def up(self):
         self._move(1)
@@ -207,6 +226,7 @@ class Page(ABC):
             'dialog': None,
         }
         self._focus = 'body'
+        self._focus_controller = None
         self.loop = loop
 
         # any page gives shortcuts info
@@ -223,6 +243,11 @@ class Page(ABC):
         if controller is not None:
             controller.update(getattr(self.loop, name))
 
+    def update_by_controller(self, controller):
+        for layout_name, c in self.controllers.items():
+            if id(c) == id(controller):
+                controller.update(getattr(self.loop, layout_name))
+
     @abstractmethod
     def init_controllers(self):
         pass
@@ -235,6 +260,8 @@ class Page(ABC):
     def focus(self, value: str):
         if value not in self.controllers:
             return
+        if self._focus_controller is not None:
+            self._focus_controller.set_border_style()
         self._focus = value
         # for specific behavior overide change_focus not focus
         self._change_focus()
@@ -243,6 +270,8 @@ class Page(ABC):
         controller: LayoutController = self.controllers.get(self._focus, None)
         if controller is not None:
             self.loop.shortcuts = controller.shortcuts
+            self._focus_controller = controller
+            controller.set_border_style('green')
 
     @property
     def codes(self):
@@ -267,14 +296,14 @@ class TablePage(Page):
 
 class ExitLayoutController(LayoutController):
     def __init__(self, loop: 'MainController'):
-        self.panel = Panel(
+        self.panel_view = Panel(
             Align.center(
-                '[red]Quitter le programme ?[/red] Oui <o> Non <n>',
+                f'[red]Quitter le programme ?[/red] Oui <o> Non <n>{self.border_style}',
                 vertical='middle'
             ),
             style='',
             title='',
-            border_style='blue',
+            border_style=self.border_style,
         )
         self.loop = loop
 
@@ -291,7 +320,7 @@ class ExitLayoutController(LayoutController):
         self.loop._move()
 
     def update(self, layout: Layout):
-        layout.update(self.panel)
+        layout.update(self.panel_view)
 
 
 class ExitPage(Page):
@@ -334,8 +363,7 @@ class MainController(Browser):
 
         self.exit_program = False
         self.shortcuts = {}
-        super().__init__(TablePage)
-        self.go_to(TablePage, model=Player)
+        super().__init__(TablePage(self, model=Player))
 
     def handle_shortcuts(self):
         entries = self.kb.read()
@@ -349,7 +377,6 @@ class MainController(Browser):
         if codes:
             self.last_codes = copy.deepcopy(codes)
             self._page.codes = codes
-            # self.go_to(WelcomeController, codes=codes)
 
         for code, func in self.shortcuts.items():
             if isinstance(code, str):
