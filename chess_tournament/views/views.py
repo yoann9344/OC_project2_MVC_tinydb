@@ -1,55 +1,102 @@
-from rich.containers import Lines
-from rich.errors import NotRenderableError
+import copy
+import time
+
+from rich.align import Align
+from rich.console import Console, ConsoleOptions, RenderResult
 from rich.layout import Layout
+from rich.live import Live
 from rich.panel import Panel
+from rich.pretty import Pretty
+from rich.table import Table
+
+from tools.key import KBHit
 
 
-class ConsoleLayoutMeta(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[cls] = instance
-        return cls._instances[cls]
-
-
-class ConsoleLayout(metaclass=ConsoleLayoutMeta):
-    def __init__(self, console):
-        self.console = console
-        self.layout = self._prep_layout()
-
-    def _prep_layout(self):
-        layout = Layout()
-        right_body = Layout(name="right_body", ratio=1)
-
-        layout.split(
-            Layout(name="left_body", ratio=2),
-            right_body,
-            splitter="row",
+class Placeholder:
+    to_render = 
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        self.panel = Panel(
+            Align.center(Pretty('Blabla content'), vertical='middle'),
+            style=self.style,
+            title=self.highlighter(self.title),
+            border_style='blue',
         )
-
-        right_body.split(
-            Layout(name="up_footer", ratio=2),
-            Layout(name="bottom_footer", ratio=1)
-        )
-        return layout
-
-    def print(self, message, code, stack_trace, vars, **kwargs):
-        try:
-            self.layout["left_body"].update(code)
-            self.layout["up_footer"].update(Panel(vars, title="Locals"))
-
-            self.layout["bottom_footer"].update(
-                Panel(Lines(stack_trace), title="Stack", style="white on blue")
-            )
-
-            self.console.print(self.layout, **kwargs)
-            self.console.print(message, **kwargs)
-        except NotRenderableError:
-            self.console.print(message, **kwargs)
+        yield self.panel
+        # yield table
 
 
 class View():
-    def print():
-        pass
+    def __init__(self):
+        # table = Table()
+        # table.add_column('Player ID')
+        # table.add_column('Rank')
+        # table.add_column('Level')
+
+        layout = Layout()
+        self.layout = layout
+
+        # Divide the 'screen' in to three parts
+        layout.split(
+            Layout(name='header', size=3),
+            Layout(ratio=1, name='main'),
+            Layout(size=10, name='footer'),
+        )
+        # Divide the 'main' layout in to 'side' and 'body'
+        layout['main'].split_row(
+            Layout(name='side'),
+            Layout(name='body', ratio=2),
+        )
+        # Divide the 'side' layout in to two
+        layout['side'].split(Layout(name='info'), Layout(name='dialog'))
+
+        self.header = layout['header']
+        main = layout['main']
+        self.footer = layout['footer']
+
+        side = main['side']
+        self.body = main['body']
+
+        self.info = side['info']
+        self.dialog = side['dialog']
+
+        self.footer._renderable = _Placeholder('Super Titre')
+
+        self.line = 'PLOP'
+
+    def loop(self):
+        footer = self.layout['footer']
+        kb = KBHit()
+        t = time.time()
+        last_codes = None
+        with Live(self.layout, refresh_per_second=4, screen=True):  # as live:
+            while 1:
+                entries = kb.read()
+                codes = [ord(c) for c in entries]
+                if len(entries) == 1 and last_codes == codes == [27]:
+                    break
+                # elif len(entries) == 3:
+                #     self.line = str(codes)
+                #     # self.line = '3PLOP'
+                #     if codes == [27, 91, 68]:
+                #         self.line = 'You hit the left key!'
+                #     elif codes == [27, 91, 67]:
+                #         self.line = 'You hit the right key!'
+                elif len(entries) > 0:
+                    # self.line += str(len(entries))
+                    self.line = str(codes) + str(last_codes)
+                    # self.line += entries
+                if codes:
+                    last_codes = copy.deepcopy(codes)
+                footer.update(
+                    Panel(
+                        Align.center(Pretty('Blabla'), vertical='middle'),
+                        style='',
+                        title=self.line,
+                        border_style='blue',
+                    )
+                )
+                if 6 > time.time() - t > 4:
+                    self.line = 'Changed'
+                time.sleep(0.1)

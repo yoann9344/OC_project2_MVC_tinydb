@@ -82,6 +82,7 @@ class ModelMeta(ABCMeta):
 
 
 class Model(metaclass=ModelMeta):
+    _type = None
     _fields = {}
     _instances = {}
     _db = TinyDB('db.json')

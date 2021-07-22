@@ -2,6 +2,7 @@ from chess_tournament import models
 
 
 class Player(models.Model):
+    name = models.FieldString()
     rank = models.FieldInteger(is_nullable=True)
 
     def increase_rank(self):
