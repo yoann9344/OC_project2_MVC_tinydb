@@ -1,3 +1,4 @@
+from .exit import ExitLayoutController
 from .row import RowLayoutController
-from .table import TableLayoutController
 from .shortcuts import ShortcutsLayoutController
+from .table import TableLayoutController

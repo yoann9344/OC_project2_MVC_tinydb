@@ -1,6 +1,6 @@
 from chess_tournament.controllers.page import Page
 
-from ..layout_controllers.exit import ExitLayoutController
+from ..layout_controllers import ExitLayoutController
 
 
 class ExitPage(Page):
