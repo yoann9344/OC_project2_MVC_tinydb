@@ -62,13 +62,19 @@ class Page(ABC):
         # for specific behavior overide change_focus not focus
         self._change_focus()
 
+    def focus_by_controller(self, controller):
+        for layout_name, c in self.controllers.items():
+            if id(c) == id(controller):
+                self.focus = layout_name
+                break
+
     def _change_focus(self):
         controller: LayoutController = self.controllers.get(self._focus, None)
         if controller is not None:
             self.loop.shortcuts = controller.shortcuts
             self._focus_controller = controller
             controller.set_border_style('green')
-            self.controllers['footer'].shortcuts = controller.shortcuts
+            self.controllers['footer'].show_shortcuts(controller.shortcuts)
 
     @property
     def codes(self):

@@ -18,5 +18,7 @@ class RowLayoutController(LayoutController):
             self.table_info = TableView(
                 ['key', 'value'],
                 list(zip(keys, values)),
+                border_style=self.border_style,
             )
+            self.panel_view = self.table_info
             layout.update(self.table_info)

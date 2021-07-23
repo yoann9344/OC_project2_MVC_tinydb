@@ -79,12 +79,7 @@ class ShortcutsLayoutController(LayoutController):
                 self.current_key = char
                 self.page.update_by_controller(self)
 
-    @property
-    def shortcuts(self):
-        return self._shortcuts
-
-    @shortcuts.setter
-    def shortcuts(self, value: dict[str, Callable]):
+    def show_shortcuts(self, value: dict[str, Callable]):
         self._shortcuts = value
         self.keys = list(
             self._shortcuts.keys() | self.shortcuts_global.keys()

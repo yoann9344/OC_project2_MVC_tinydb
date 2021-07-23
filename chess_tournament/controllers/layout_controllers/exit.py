@@ -20,7 +20,7 @@ class ExitLayoutController(LayoutController):
         self.loop = self.page.loop
 
         self.shortcuts = {
-            'o': self.stop,
+            'y': self.stop,
             'n': self.resume,
         }
 

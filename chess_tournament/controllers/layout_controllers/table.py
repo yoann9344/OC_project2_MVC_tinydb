@@ -23,8 +23,10 @@ class TableLayoutController(LayoutController):
         self.shortcuts = {
             'k': self.up,
             'j': self.down,
-            't': self.sort,
-            'T': self.reverse_sort,
+            's': self.sort,
+            'S': self.reverse_sort,
+            'd': self.delete_row,
+            'e': self.edit_row,
         }
         self.index = -1
         self.model = model
@@ -64,6 +66,25 @@ class TableLayoutController(LayoutController):
         )
         self.table.columns[self.sort_index].header_style = 'blue'
         layout.update(self.table)
+
+    def edit_row(self):
+        '''Delete selected row
+        shortcut_name = Supprimer la ligne
+        '''
+        self.info_layout_controller.take_focus_from(self)
+
+    def delete_row(self):
+        '''Delete selected row
+        shortcut_name = Supprimer la ligne
+        '''
+        if 0 <= self.index < len(self.data):
+            self.data[self.index].delete()
+            self.data.pop(self.index)
+            if len(self.data) == self.index != 0:
+                self._move(-1)
+            else:
+                self._move(0)
+            self.page.update_by_controller(self)
 
     def sort(self):
         '''Sort row by next column
