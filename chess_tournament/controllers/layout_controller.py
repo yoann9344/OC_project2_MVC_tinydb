@@ -11,6 +11,7 @@ class LayoutController(ABC):
     border_style = 'blue'
 
     def __init__(self, page: 'Page', *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.page: Page = page
         self.controller_which_gave_focus = None
         self.shortcuts = {}

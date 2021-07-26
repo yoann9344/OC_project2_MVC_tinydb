@@ -7,7 +7,7 @@ from rich.console import Console
 # from rich.live import Live
 
 from .page import Page
-from chess_tournament.models.test import Player
+from chess_tournament.models.mymodels import Player, Tournament
 from chess_tournament.views.view import LayoutView
 from chess_tournament.tools.key import KBHit
 from .pages import ExitPage, TablePage

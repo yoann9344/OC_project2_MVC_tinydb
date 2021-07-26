@@ -29,7 +29,7 @@ class TableView(Panel):
                 )
             elif isinstance(row, tuple):
                 table.add_row(
-                    *[Pretty(row[j]) for j in range(len(headers))],
+                    *[row[j] for j in range(len(headers))],
                     style=color
                 )
             else:

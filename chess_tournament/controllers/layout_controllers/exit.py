@@ -8,9 +8,12 @@ from chess_tournament.controllers.layout_controller import LayoutController
 class ExitLayoutController(LayoutController):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        yes_key = 'y'
+        no_key = 'n'
         self.panel_view = Panel(
             Align.center(
-                '[red]Quitter le programme ?[/red] Oui <o> Non <n>',
+                '[red]Quitter le programme ?[/red] '
+                f'Oui <{yes_key}> Non <{no_key}>',
                 vertical='middle'
             ),
             style='',
@@ -20,8 +23,8 @@ class ExitLayoutController(LayoutController):
         self.loop = self.page.loop
 
         self.shortcuts = {
-            'y': self.stop,
-            'n': self.resume,
+            yes_key: self.stop,
+            no_key: self.resume,
         }
 
     def stop(self):

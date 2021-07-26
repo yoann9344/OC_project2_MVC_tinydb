@@ -10,7 +10,7 @@ class TablePage(Page):
         self.controllers.update({
             'body': TableLayoutController(
                 model,
-                info_layout_controller=info,
+                detail_selection_LC=info,
                 page=self,
             ),
             'info': info,

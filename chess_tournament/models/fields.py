@@ -74,8 +74,25 @@ class FieldFloating(Field):
 
 
 class FieldString(Field):
+    def __init__(self, *args, **kwargs):
+        super().__init__(null_value={None, ''}, *args, **kwargs)
     _type = str
 
 
 class FieldDate(Field):
     _type = datetime.date
+
+    def serialize(self, value: datetime.date):
+        return value.isoformat()
+
+    def deserialize(self, value, name, model):
+        if isinstance(value, datetime.date):
+            return value
+        elif isinstance(value, str):
+            return datetime.date.fromisoformat(value)
+        elif isinstance(value, int):
+            return datetime.date.fromtimestamp(value)
+        raise ValueError(
+            f'Enable to deserialize field {name} from {model.__name__} :'
+            f'value\'s type not handled : {value}'
+        )

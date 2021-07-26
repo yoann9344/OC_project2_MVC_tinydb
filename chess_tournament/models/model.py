@@ -26,11 +26,14 @@ class Field(ABC):
         return self._default
 
     def validate(self, value):
-        if value == self.null_value:
+        if (
+            value == self.null_value or
+            (isinstance(self.null_value, set) and value in self.null_value)
+        ):
             if not self.is_nullable:
                 raise ValueError(
                     f'{self.__class__.__name__} can not be null')
-        if not isinstance(value, self._type):
+        elif not isinstance(value, self._type):
             raise TypeError(
                 f'{self.__class__.__name__} must be instance of {self._type} '
                 f'not type {value}'
@@ -94,8 +97,9 @@ class Model(metaclass=ModelMeta):
                 if self.init_O2M(name, value):
                     pass
                 else:
+                    if hasattr(field, 'deserialize'):
+                        value = field.deserialize(value, name, self)
                     setattr(self, name, value)
-                # setattr(self, name, value)
             else:
                 setattr(self, name, field.default)
         for name, value in kwargs.items():

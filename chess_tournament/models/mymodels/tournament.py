@@ -8,6 +8,7 @@ class Tournament(models.Model):
     place = models.FieldString()
     nb_rounds = models.FieldInteger(default=4)
     game_type = models.ForeignKey('GameType')
+    players = models.One2Many('Player')
     # dates = models.One2Many()
     description = models.FieldString(is_nullable=True)
 
