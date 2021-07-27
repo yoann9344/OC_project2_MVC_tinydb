@@ -1,4 +1,5 @@
-import sys
+import collections
+import types
 from abc import ABC, ABCMeta
 
 from tinydb import TinyDB, Query
@@ -6,7 +7,7 @@ from tinydb.queries import QueryInstance
 
 from chess_tournament.app import app
 import chess_tournament.models.fields as chess_fields
-# from chess_tournament.models import ForeignKey, One2Many
+# from chess_tournament.models import ForeignKey, Many2One
 # from chess_tournament.models
 
 
@@ -25,18 +26,18 @@ class Field(ABC):
                 f'Field {self} is not nullable and has no default value')
         return self._default
 
-    def validate(self, value):
+    def validate(self, value, attr, model):
         if (
             value == self.null_value or
             (isinstance(self.null_value, set) and value in self.null_value)
         ):
             if not self.is_nullable:
                 raise ValueError(
-                    f'{self.__class__.__name__} can not be null')
+                    f'{model.__class__.__name__}.{attr} can not be null')
         elif not isinstance(value, self._type):
             raise TypeError(
-                f'{self.__class__.__name__} must be instance of {self._type} '
-                f'not type {value}'
+                f'{model.__class__.__name__}.{attr} must be instance of '
+                f'{self._type} not type {value}'
             )
 
     def serialize(self, value):
@@ -84,6 +85,33 @@ class ModelMeta(ABCMeta):
         return super().__getattribute__(name)
 
 
+class RelationalList(collections.UserList):
+    def __init__(self, *args, model_obj, attr_name, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model_obj = model_obj
+        self.attr_name = attr_name
+
+    def check(self):
+        self.model_obj.check_field_type(self.attr_name, self)
+
+    def append(self, *args, **kwargs):
+        super().append(*args, **kwargs)
+        self.check()
+
+    def extend(self, *args, **kwargs):
+        super().extend(*args, **kwargs)
+        self.check()
+
+    # WIP delete
+    def pop(self, index, *args, **kwargs):
+        # self.model_obj.delete(index)
+        super().pop(index, *args, **kwargs)
+        self.check()
+
+    # WIP search
+    # def index(self, *args, **kwargs):
+
+
 class Model(metaclass=ModelMeta):
     _type = None
     _fields = {}
@@ -91,7 +119,8 @@ class Model(metaclass=ModelMeta):
     _db = TinyDB('db.json')
 
     def __init__(self, **kwargs):
-        for name, field in self._fields.items():
+        # use list 'cause _fields can change at runtime
+        for name, field in list(self._fields.items()):
             if name in kwargs:
                 value = kwargs.pop(name)
                 if self.init_O2M(name, value):
@@ -102,8 +131,8 @@ class Model(metaclass=ModelMeta):
                     setattr(self, name, value)
             else:
                 setattr(self, name, field.default)
-        for name, value in kwargs.items():
-            self.init_O2M(name, value)
+        # for name, value in kwargs.items():
+        #     self.init_O2M(name, value)
 
         if kwargs.get('save', True):
             self.save()
@@ -112,12 +141,29 @@ class Model(metaclass=ModelMeta):
         if isinstance(value, dict) and '_table' in value:
             model: Model = ModelMeta.models.get(value['_table'], None)
             if model is not None:
+                field = self._fields[name]
+                # related_name = None
+                # for k, f in model._fields.items():
+                #     if f._type == self.__class__:
+                #         related_name = k
+                #         break
                 self._fields.update({
-                    value['_table']: chess_fields.One2Many(model)
+                   name: field.__class__(
+                       model,
+                       related_name=field.related_name,
+                   )
                 })
                 ids = value['_list']
+                self.__setattr__(name, RelationalList(
+                    model_obj=self,
+                    attr_name=name,
+                ))
                 instances = [model.get(doc_id=doc_id) for doc_id in ids]
-                setattr(self, name, instances)
+                getattr(self, name).extend(instances)
+                # instances_linked = RelationalList(
+                #     instances,
+                # )
+                # setattr(self, name, instances_linked)
                 return True
             else:
                 raise ValueError(
@@ -145,31 +191,93 @@ class Model(metaclass=ModelMeta):
             value = self.check_field_type(name, value)
         super().__setattr__(name, value)
 
-    def create_related_relationship(self, field, doc_id):
+    def create_related_relationship(self, field, doc_id, name):
         related_obj: Model = field._type.get(doc_id=doc_id)
-        if field.related_name:
-            relations = getattr(related_obj, field.related_name, [])
+        related_name = field.related_name
+        relation_type = field.__class__
+        if relation_type == chess_fields.ForeignKey:
+            relation_type = chess_fields.Many2One
+        if related_name:
+            must_be_saved = False
+            relations = getattr(related_obj, related_name, [])
+            if not isinstance(relations, RelationalList):
+                if isinstance(relations, Field):
+                    relations = []
+                relations = RelationalList(
+                    relations,
+                    model_obj=related_obj,
+                    attr_name=related_name,
+                )
+                must_be_saved = True
             if not any(obj.id == self.id for obj in relations):
                 relations.append(self)
                 related_obj._fields.update(
-                    {field.related_name: chess_fields.One2Many(self.__class__)}
-                    # {field.related_name: One2Many(self.__class__)}
+                    {
+                        field.related_name: relation_type(
+                            self.__class__,
+                            related_name=name,
+                        )
+                    }
                 )
                 setattr(related_obj, field.related_name, relations)
+                must_be_saved = True
+            if must_be_saved:
                 related_obj.save()
         return related_obj
 
     def check_field_type(self, name, value):
+        # WIP key error if O2M not set, take care of related_name
         field = self._fields[name]
         # if isinstance(field, ForeignKey):
         if isinstance(field, chess_fields.ForeignKey):
             if isinstance(value, int):
-                value = self.create_related_relationship(field, value)
+                value = self.create_related_relationship(field, value, name)
             elif isinstance(value, field._type):
-                self.create_related_relationship(field, value.id)
-            field.validate(value)
+                self.create_related_relationship(field, value.id, name)
+            field.validate(value, name, self)
+        elif isinstance(field, chess_fields.Many2Many):
+            for index, item in enumerate(value):
+                if isinstance(item, int):
+                    value[index] = self.create_related_relationship(
+                        field, item, name
+                    )
+                elif isinstance(item, field._type):
+                    self.create_related_relationship(field, item.id, name)
+            if not isinstance(value, RelationalList):
+                value = RelationalList(
+                    value,
+                    model_obj=self,
+                    attr_name=name,
+                )
+            field.validate(value, name, self)
+        elif isinstance(field, chess_fields.Many2One):
+            for index, item in enumerate(value):
+                if isinstance(item, int):
+                    related_obj: Model = field._type.get(doc_id=item)
+                    related_name = field.related_name
+                    val = getattr(related_obj, related_name, None)
+                    if val is None:
+                        setattr(related_obj, related_name, self)
+                    else:
+                        # WIP error or unlink current foreign obj
+                        pass
+                elif isinstance(item, field._type):
+                    related_name = field.related_name
+                    val = getattr(item, related_name, None)
+                    if val is None:
+                        setattr(related_obj, related_name, self)
+                    else:
+                        # WIP error or unlink current foreign obj
+                        pass
+            if not isinstance(value, RelationalList):
+                value = RelationalList(
+                    value,
+                    model_obj=self,
+                    attr_name=name,
+                )
+            field.validate(value, name, self)
         else:
-            field.validate(value)
+            field.validate(value, name, self)
         return value
 
     @classmethod
@@ -219,5 +327,40 @@ class Model(metaclass=ModelMeta):
 
     def delete(self):
         id_ = self.id
+        # WIP delete relations
+        for name, field in self._fields.items():
+            if isinstance(field, chess_fields.RelationalField):
+                related_obj = getattr(self, name, None)
+                if isinstance(related_obj, int):
+                    related_obj = field._type(doc_id=related_obj)
+                elif isinstance(related_obj, chess_fields.RelationalField):
+                    continue
+                elif related_obj is None:
+                    continue
+                related_name = field.related_name
+                obj_has_many = isinstance(
+                    field,
+                    (chess_fields.ForeignKey, chess_fields.Many2Many)
+                )
+                for obj in list(related_obj):
+                    if obj_has_many:
+                        obj_references = getattr(obj, related_name, None)
+                        if obj_references is not None:
+                            nb_obj = len(obj_references)
+                            for i, ref in enumerate(reversed(obj_references)):
+                                if ref.id == self.id:
+                                    obj_references.pop(nb_obj - i - 1)
+                            obj.save()
+                    else:
+                        if isinstance(obj, chess_fields.RelationalField):
+                            continue
+                        setattr(obj, related_name, None)
+                        obj.save()
         self._table.remove(doc_ids=[id_])
         self.__class__._instances.pop(id_)
+
+    def __repr__(self):
+        if isinstance(self.__str__, types.MethodWrapperType):
+            return super().__repr__()
+        else:
+            return f'<{self.__class__.__name__} {str(self)}>'

@@ -3,12 +3,14 @@ from abc import ABC
 from functools import partial
 
 from chess_tournament.app import app
-from chess_tournament.models.model import ModelMeta, Model, Field
-# import chess_tournament.models as chess_fields
+from chess_tournament.models.model import ModelMeta, Model, Field, RelationalList
 
 
 class RelationalField(Field):
-    def __init__(self, model: str or Model, *args, **kwargs):
+    # WIP delete relationnal obj, required related name ?
+    # def __init__(self, model: str or Model, related_name=None, *args, **kwargs):
+    def __init__(self, model: str or Model, *args, related_name: str, **kwargs):
+        self.related_name = related_name
         if isinstance(model, str):
             def get_model_from_string(model_name, field):
                 field._type = ModelMeta.models[model_name.lower()]
@@ -29,17 +31,12 @@ class ForeignKey(RelationalField):
     def serialize(self, value):
         return value.id
 
-    def __init__(self, model, related_name: str = None, *args, **kwargs):
-        self.related_name = related_name
-        super().__init__(model, *args, **kwargs)
 
-
-class One2Many(RelationalField):
+class Many2One(RelationalField):
     _type = Model
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, default=[], *args, **kwargs)
-        # super().__init__(model, *args, **kwargs)
 
     def serialize(self, value):
         serialized = {
@@ -50,18 +47,18 @@ class One2Many(RelationalField):
             raise ValueError(f'id must integer {value}')
         return serialized
 
-    def validate(self, value):
+    def validate(self, value, attr, model):
         if (
-            not isinstance(value, list)
+            not isinstance(value, RelationalList)
             or not all(isinstance(obj, self._type) for obj in value)
         ):
             raise TypeError(
-                f'{self.__class__.__name__} must be type of List[{self._type}]'
-                f' not {value}'
+                f'{model.__class__.__name__}.{attr} must be type of '
+                f'List[{self._type}] not {type(value)} : {value}'
             )
 
 
-class Many2Many(One2Many):
+class Many2Many(Many2One):
     pass
 
 

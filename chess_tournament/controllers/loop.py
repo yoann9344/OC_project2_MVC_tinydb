@@ -10,7 +10,7 @@ from .page import Page
 from chess_tournament.models.mymodels import Player, Tournament
 from chess_tournament.views.view import LayoutView
 from chess_tournament.tools.key import KBHit
-from .pages import ExitPage, TablePage
+from .pages import ExitPage, TablePage, WelcomPage
 
 import logging
 
@@ -80,16 +80,19 @@ class MainController(Browser):
 
         import string
         import random
+        import datetime
 
         def name_generator():
             chars = chars = string.ascii_letters
             size = random.randint(3, 10)
             return ''.join(random.choice(chars) for _ in range(size))
 
-        while nb_players < 10:
+        while nb_players < 4:
             Player(
-                rank=random.randrange(10),
-                name=name_generator()
+                name=name_generator(),
+                firstname=name_generator(),
+                birth=datetime.date(1983, 1, 22),
+                rank=random.randint(2400, 2800)
             )
             nb_players += 1
 
@@ -111,7 +114,8 @@ class MainController(Browser):
             'x': self.go_foreward,
             'q': self.quit_dialog,
         }
-        super().__init__(TablePage(self, model=Player))
+        # super().__init__(TablePage(self, model=Player))
+        super().__init__(WelcomPage(self))
 
     def quit_dialog(self):
         '''Open quit dialog

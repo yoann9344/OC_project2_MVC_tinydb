@@ -7,7 +7,16 @@ from chess_tournament.models import Model
 
 
 class TableView(Panel):
-    def __init__(self, headers: list[str], rows: list[dict] or list[Model], title=None, border_style='blue', selection=None):
+    def __init__(
+        self,
+        headers: list[str],
+        rows: list[dict] or list[Model],
+        title=None,
+        border_style='blue',
+        selection=None,
+        multiple_selection=[],
+        multiple_selection_color='yellow',
+    ):
         self.style = ''
         table = Table(style=self.style, title=title, border_style=None)
         for h in headers:
@@ -17,6 +26,8 @@ class TableView(Panel):
             if i == selection:
                 # color = '[blue]'
                 color = 'blue'
+            elif i in multiple_selection:
+                color = multiple_selection_color
             if isinstance(row, Model):
                 table.add_row(
                     *[str(getattr(row, h, '')) for h in headers],
@@ -48,16 +59,3 @@ class TableView(Panel):
             title=title,
             border_style=border_style,
         )
-
-
-if __name__ == '__main__':
-    TableView(
-        ['id', 'value'],
-        [
-            {'id': 1, 'value': 'plop'},
-            {'id': 2, 'value': 'plop'},
-            {'id': 3, 'value': 'plep'},
-            {'id': 4, 'value': 'plzp'},
-            {'id': 5, 'value': 'plap'},
-        ]
-    )
