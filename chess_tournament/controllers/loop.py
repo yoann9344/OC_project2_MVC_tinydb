@@ -4,7 +4,7 @@ from typing import Type
 
 import rich
 from rich.console import Console
-# from rich.live import Live
+from rich.live import Live
 
 from .page import Page
 from chess_tournament.models.mymodels import Player, Tournament
@@ -116,6 +116,9 @@ class MainController(Browser):
         }
         # super().__init__(TablePage(self, model=Player))
         super().__init__(WelcomPage(self))
+        self.edition_mode = False
+        self.buffer = ''
+        self.edition_callback = None
 
     def quit_dialog(self):
         '''Open quit dialog
@@ -128,6 +131,28 @@ class MainController(Browser):
         entries = self.kb.read()
         codes = [ord(c) for c in entries]
 
+        if self.edition_mode:
+            if 27 in codes:
+                self.stop_edition_mode()
+                return
+            entries = ''
+            for c in codes:
+                if c == 127:
+                    # entries += '\b'
+                    if len(entries):
+                        entries = entries[:-1]
+                    elif len(self.buffer):
+                        self.buffer = self.buffer[:-1]
+                elif c == 10:
+                    entries += '\n'
+                elif 32 <= c <= 126 or 161 <= c <= 255:
+                    entries += chr(c)
+                else:
+                    entries += str(c)
+            self.buffer += entries
+            self.edition_callback(self.buffer, entries)
+            return
+
         if codes:
             self.last_codes = copy.deepcopy(codes)
             self._page.codes = codes
@@ -138,23 +163,42 @@ class MainController(Browser):
             if code in codes:
                 func()
 
+    def start_edition_mode(self, callback):
+        self.edition_mode = True
+        self.edition_callback = callback
+
+    def stop_edition_mode(self):
+        self.edition_callback(self.buffer, '', desactivated=True)
+        self.edition_mode = False
+        self.edition_callback = None
+        self.buffer = ''
+
     def loop(self):
         layout = self.layout
         self.kb = KBHit()
         self.last_codes = None
-        # with Live(layout.layout, refresh_per_second=4,
-        # screen=True, console=self.console) as live:
-        try:
-            while 1:
-                self.handle_shortcuts()
+        # with Live(
+        #     layout.layout,
+        #     refresh_per_second=20,
+        #     screen=True,
+        #     console=self.console
+        # ) as live:
+        while 1:
+            try:
+                while 1:
+                    self.handle_shortcuts()
 
-                if self.need_update:
-                    self._page.update()
-                    self.need_update = False
+                    if self.need_update:
+                        self._page.update()
+                        self.need_update = False
 
-                if self.exit_program:
-                    break
-                rich.print(layout.layout)
-                time.sleep(0.1)
-        except Exception:
-            self.console.print_exception(extra_lines=5, show_locals=True)
+                    if self.exit_program:
+                        break
+                    rich.print(layout.layout)
+                    # live.update(layout.layout)
+                    time.sleep(0.02)
+            except Exception:
+                self.console.print_exception(extra_lines=5, show_locals=True)
+                break
+            if self.exit_program:
+                break

@@ -20,7 +20,6 @@ class WelcomeLayoutController(LayoutController):
         ''')
         self.panel_view = Panel(
             Align.center(
-                # welcome_message,
                 Markdown(welcome_message),
                 vertical='middle'
             ),

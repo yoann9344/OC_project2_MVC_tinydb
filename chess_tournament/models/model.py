@@ -11,6 +11,10 @@ import chess_tournament.models.fields as chess_fields
 # from chess_tournament.models
 
 
+class ObjectDoesNotExist(BaseException):
+    pass
+
+
 class Field(ABC):
     _type = None  # must be set
 
@@ -39,6 +43,17 @@ class Field(ABC):
                 f'{model.__class__.__name__}.{attr} must be instance of '
                 f'{self._type} not type {value}'
             )
+
+    def convert(self, value, attr, model):
+        try:
+            self.validate(value, attr, model)
+        except TypeError:
+            try:
+                return self._type(value)
+            except Exception:
+                raise ValueError(
+                    'Can not convert "{repr(value)}" to {self._type}')
+        return value
 
     def serialize(self, value):
         return value
@@ -295,7 +310,12 @@ class Model(metaclass=ModelMeta):
                 "'query_instance' or 'doc_id'"
             )
         elif doc_id is not None:
-            return cls(**cls._table.get(doc_id=doc_id), id=doc_id)
+            row = cls._table.get(doc_id=doc_id)
+            if row is None:
+                raise ObjectDoesNotExist(
+                    f'{cls.__name__} with id={doc_id} does not exist.'
+                )
+            return cls(**row, id=doc_id)
         objects = cls._table.search(query_instance)
         nb_obj = len(objects)
         if nb_obj > 1:

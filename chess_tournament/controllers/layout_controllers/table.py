@@ -5,11 +5,10 @@ from rich.layout import Layout
 from chess_tournament import models
 from chess_tournament.controllers.layout_controller import LayoutController
 from chess_tournament.views.table import TableView
-from ..layout_controllers import RowLayoutController
-from .plugins import SelectableLayoutController
+from .plugins import SelectablePlugin
 
 
-class TableLayoutController(LayoutController, SelectableLayoutController):
+class TableLayoutController(LayoutController, SelectablePlugin):
     def __init__(
         self,
         model: models.Model,
@@ -38,6 +37,7 @@ class TableLayoutController(LayoutController, SelectableLayoutController):
         self.table = TableView(
             self.headers,
             self.data,
+            title=f'Table {model.__name__}',
             border_style=self.border_style,
         )
         self.panel_view = self.table
@@ -62,6 +62,7 @@ class TableLayoutController(LayoutController, SelectableLayoutController):
             self.headers,
             self.data,
             selection=selection,
+            title=f'Table {self.model.__name__}',
             border_style=self.border_style,
             multiple_selection=self.multiple_selection
         )

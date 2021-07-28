@@ -1,12 +1,14 @@
 from chess_tournament.controllers.page import Page
 
-from ..layout_controllers import WelcomeLayoutController
-from chess_tournament import models
+from ..layout_controllers import (
+    WelcomeLayoutController, TournamentCreatorLayoutController
+)
 
 
 class WelcomPage(Page):
     def init_controllers(self, *args, **kwargs):
         self.controllers.update({
-            'body': WelcomeLayoutController(self),
+            'body': TournamentCreatorLayoutController(self),
+            'info': WelcomeLayoutController(self),
         })
         self.focus = 'body'

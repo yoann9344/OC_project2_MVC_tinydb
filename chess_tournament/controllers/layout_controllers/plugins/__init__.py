@@ -1,1 +1,2 @@
-from .selectable import SelectableLayoutController
+from .selectable import SelectablePlugin
+from .editable import EditablePlugin

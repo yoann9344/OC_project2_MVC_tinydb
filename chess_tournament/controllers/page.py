@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from rich.panel import Panel
+
 from .layout_controller import LayoutController
 from .layout_controllers import ShortcutsLayoutController
 
@@ -20,6 +22,13 @@ class Page(ABC):
         self._focus = 'body'
         self._focus_controller = None
         self.loop = loop
+        self.border_style = 'blue'
+        self.empty_layout = Panel(
+            '',
+            style='',
+            title='',
+            border_style=self.border_style,
+        )
 
         # any page gives shortcuts info
         self.controllers['footer'] = ShortcutsLayoutController(
@@ -31,7 +40,9 @@ class Page(ABC):
 
     def update(self):
         for layout_name, controller in self.controllers.items():
-            if controller is not None:
+            if controller is None:
+                getattr(self.loop, layout_name).update(self.empty_layout)
+            else:
                 controller.update(getattr(self.loop, layout_name))
 
     def update_by_name(self, name):

@@ -35,6 +35,7 @@ class KBHit:
         '''
         Creates a KBHit object that you can call to do various keyboard things.
         '''
+        self.activated = True
         if os.name == 'nt':
             pass
         else:
@@ -48,16 +49,30 @@ class KBHit:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
 
             # Support normal-terminal reset at exit
-            atexit.register(self.set_normal_term)
+            atexit.register(self.desactivate)
 
-    def set_normal_term(self):
+    def activate(self):
+        ''' Reactivate KBHit terminal.  On Windows this is a no-op.
+        '''
+        if os.name == 'nt' or self.activated:
+            pass
+        else:
+            self.new_term = termios.tcgetattr(self.fd)
+            self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
+            termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
+        # # clear buffer
+        # while self.kbhit():
+        #     self.getch()
+        self.activated = True
+
+    def desactivate(self):
         ''' Resets to normal terminal.  On Windows this is a no-op.
         '''
-        if os.name == 'nt':
+        if os.name == 'nt' or not self.activated:
             pass
-
         else:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+        self.activated = False
 
     def getch(self):
         ''' Returns a keyboard character after kbhit() has been called.
@@ -97,6 +112,8 @@ class KBHit:
             return dr != []
 
     def read(self):
+        if not self.activated:
+            return ''
         string = ''
         while self.kbhit():
             c = self.getch()

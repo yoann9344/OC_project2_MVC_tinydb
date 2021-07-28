@@ -12,13 +12,14 @@ class TableView(Panel):
         headers: list[str],
         rows: list[dict] or list[Model],
         title=None,
+        title_table=None,
         border_style='blue',
         selection=None,
         multiple_selection=[],
         multiple_selection_color='yellow',
     ):
         self.style = ''
-        table = Table(style=self.style, title=title, border_style=None)
+        table = Table(style=self.style, title=title_table, border_style=None)
         for h in headers:
             table.add_column(h)
         for i, row in enumerate(rows):
