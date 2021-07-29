@@ -9,8 +9,9 @@ from rich.prompt import Prompt
 from rich.text import Text
 
 from chess_tournament.controllers.layout_controller import LayoutController
-from chess_tournament.models.mymodels import Tournament
+from chess_tournament.models.mymodels import Tournament, GameType
 from .plugins import EditablePlugin, SelectablePlugin
+# from ..pages import SelectTournamentPlayersPage
 
 
 class TournamentCreatorLayoutController(LayoutController, EditablePlugin, SelectablePlugin):
@@ -23,6 +24,11 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             'j': self.down,
             'e': self.edit,
         }
+        self.info_color = ''
+        self.multiple_selection_color = 'green'
+        self.double_selection_color = 'yellow'
+        self.single_selection_color = 'blue'
+
         self.explainations = inspect.cleandoc('''
             ### Création d'un tournois
             - Sélectionnez les champs à renseigner avec <k> et <j>
@@ -38,40 +44,44 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
         # ]
         self.name_fields = {
             'Nom': 'name',
+            'Lieu': 'place',
             'Description': 'description',
             'Nombre de tours': 'nb_rounds',
+            'Durée de la partie': 'game_type',
         }
         self.fields = {
-            'Nom': 'PLOP',
+            'Nom': '',
+            'Lieu': '',
             'Description': '',
             'Nombre de tours': '',
+            'Durée de la partie': '',
         }
+
+        self.init_fields()
+
         # self.fields = {
         #     ('Nom': 'PLOP'),
         #     ('Description': ''),
         #     ('Nombre de tours': ''),
         # }
-        self.selectables = [Text.assemble(k + ' : ', v) for k, v in self.fields.items()]
-        self.groups = RenderGroup(
-            Markdown(self.explainations),
-            # *self.fields,
-            *self.selectables,
-        )
-        self.align = Align.center(
-            # Markdown(self.explainations),
-            self.groups,
-            vertical='middle'
-        )
+        # self.selectables = [Text.assemble(k + ' : ', v) for k, v in self.fields.items()]
+        # self.groups = RenderGroup(
+        #     Markdown(self.explainations),
+        #     # *self.fields,
+        #     *self.selectables,
+        # )
+        # self.align = Align.center(
+        #     # Markdown(self.explainations),
+        #     self.groups,
+        #     vertical='middle'
+        # )
         self.panel_view = Panel(
-            self.align,
+            '',
             style='',
             title='',
             border_style=self.border_style,
         )
-        self.info_color = ''
-        self.multiple_selection_color = 'green'
-        self.double_selection_color = 'yellow'
-        self.single_selection_color = 'blue'
+        self.page.update_by_controller(self)
 
     def update(self, layout: Layout):
         # self.align.renderable = Markdown(self.welcome_message)
@@ -118,39 +128,59 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             # self.activate_edition(callback=self.buffer, multiline=True)
             self.activate_edition(callback=self.buffer, multiline=False)
 
+    def init_fields(self):
+        self.multiple_selection.clear()
+        for index, name in enumerate(self.fields):
+            field_name = self.name_fields[name]
+            field = Tournament._fields[field_name]
+            if field._default is not None:
+                self.fields[name] = str(field._default)
+                self.multiple_selection.add(index)
+            elif field.is_nullable:
+                self.multiple_selection.add(index)
+            else:
+                self.fields[name] = ''
+
     def create_tournament(self):
         params = {}
+        if len(self.multiple_selection) != len(self.fields):
+            return
         for name, value in self.fields:
             attr = self.name_fields[name]
             try:
-                value = Tournament._fields[attr].convert(value)
+                if attr == 'game_type':
+                    assert value != ''
+                    duration = int(value)
+                    value = GameType(duration=duration)
+                else:
+                    value = Tournament._fields[attr].convert(value)
             except Exception:
                 self.error = 'Plop'
                 break
             params[attr] = value
         else:
-            self.tournament = Tournament(**params)
+            tournament = Tournament(**params)
+            self.init_fields()
+            self.page.loop.go_to(SelectTournamentPlayersPage(tournament))
 
-    def buffer(self, buffer, last_entries, desactivated):
-        # if buffer:
-        #     buffer = f'{buffer[:-1]}[blue]{buffer[-1]}[/blue]\x1b[?25h'
-        field_name = list(self.fields.keys())[self.index]
-        self.fields[field_name] = buffer  # + '[blue]|[/blue]'
-        # self.align.renderable = Markdown(self.welcome_message)
-        # self.align.renderable = Markdown(Text.assemble(self.welcome_message, cursor))
-        # self.align.renderable = self.welcome_message
+    def validate_input(self, field_name, input_ended):
+        input_value = self.fields[field_name]
         attr = self.name_fields[field_name]
         try:
-            Tournament._fields[attr].convert(
-                self.fields[field_name], attr, Tournament
-            )
+            if attr == 'game_type':
+                assert input_value != ''
+                int(input_value)
+            else:
+                Tournament._fields[attr].convert(
+                    input_value, attr, Tournament
+                )
             validated = True
             self.info_color = 'underline green'
         except Exception:
             validated = False
             self.error = ''
             self.info_color = 'underline red'
-        if desactivated:
+        if input_ended:
             self.info_color = ''
             next_index = self.index + 1
             if not validated:
@@ -174,4 +204,11 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
                         break
                 else:
                     self.allgreen = True
+
+    def buffer(self, buffer, last_entries, desactivated, cancelled):
+        if cancelled:
+            buffer = ''
+        field_name = list(self.fields.keys())[self.index]
+        self.fields[field_name] = buffer
+        self.validate_input(field_name, desactivated)
         self.page.update_by_controller(self)

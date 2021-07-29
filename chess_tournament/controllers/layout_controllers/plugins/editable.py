@@ -17,7 +17,7 @@ class EditablePlugin(abc.ABC):
         # self.page.loop.kb.desactivate()
 
     def desactivate_edition(self):
-        self.page.loop.stop_edition_mode()
+        self.page.loop.stop_edition_mode(force_stop=True)
         self.editable_activated = False
         # self.page.loop.kb.activate()
 
@@ -25,14 +25,18 @@ class EditablePlugin(abc.ABC):
         self.editable_callback(buffer, last_entries, desactivated)
 
     def single_editor(self, buffer, last_entries, desactivated=False):
-        if self.editable_callback is None:
-            return
+        cancelled = desactivated
+        self.editable_activated = not desactivated
         if '\n' in last_entries:
             last_entries = last_entries.split('\n')[0]
             buffer = buffer.split('\n')[0]
             self.desactivate_edition()
+            cancelled = False
+
         self.editable_callback(
             buffer,
             last_entries,
             desactivated=not self.editable_activated,
+            cancelled=cancelled,
         )
+

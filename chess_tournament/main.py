@@ -1,11 +1,14 @@
 from datetime import date
 # from .models.test import Player, Ref, Element
-from .models.mymodels import Player, Tournament, DateTournament
+from .models.mymodels import Player, Tournament, DateTournament, GameType
 from chess_tournament.controllers import MainController
 
 
 def run():
     if len(Tournament.all()) == 0:
+        bullet = GameType(duration=2)
+        blitz = GameType(duration=5)
+        rapid = GameType(duration=10)
         p1 = Player(
             name='Bacrot',
             firstname='Étienne',
@@ -21,7 +24,7 @@ def run():
             ),
             # players=[p1],
             nb_rounds=4,
-            game_type=10,
+            game_type=blitz,
         )
         world_cup.players.append(p1)
         world_cup.save()
@@ -33,7 +36,6 @@ def run():
     else:
         t1 = Tournament.get(doc_id=1)
         p1 = Player.get(doc_id=1)
-        t1.players.append(p1)
     # return
     # # p1 = Player(rank=1, name='Plop')
     # # p2 = Player(rank=2, name='Test')

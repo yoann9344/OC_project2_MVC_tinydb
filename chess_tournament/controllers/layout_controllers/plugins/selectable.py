@@ -23,7 +23,10 @@ class SelectablePlugin(abc.ABC):
 
     def _move(self, increment):
         # reset previous row's color
-        if self.index in self.multiple_selection:
+        no_selectables = self.index < 0 or self.index >= len(self.selectables)
+        if no_selectables:
+            pass
+        elif self.index in self.multiple_selection:
             self.selectables[self.index].style = self.multiple_selection_color
         else:
             self.selectables[self.index].style = None
@@ -37,13 +40,15 @@ class SelectablePlugin(abc.ABC):
             self.index = 0
 
         # set current row's color
-        if self.index in self.multiple_selection:
+        if no_selectables:
+            pass
+        elif self.index in self.multiple_selection:
             self.selectables[self.index].style = self.double_selection_color
         else:
             self.selectables[self.index].style = self.single_selection_color
 
         lc = self.detail_selection_LC
-        if lc is not None:
+        if lc is not None and self.data:
             lc.data = self.data[self.index]
             self.page.update_by_controller(lc)
 

@@ -167,8 +167,9 @@ class MainController(Browser):
         self.edition_mode = True
         self.edition_callback = callback
 
-    def stop_edition_mode(self):
-        self.edition_callback(self.buffer, '', desactivated=True)
+    def stop_edition_mode(self, force_stop=False):
+        if not force_stop:
+            self.edition_callback(self.buffer, '', desactivated=True)
         self.edition_mode = False
         self.edition_callback = None
         self.buffer = ''

@@ -1,4 +1,5 @@
 from rich.align import Align
+from rich.console import RenderGroup
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich.table import Table
@@ -17,6 +18,7 @@ class TableView(Panel):
         selection=None,
         multiple_selection=[],
         multiple_selection_color='yellow',
+        info=None,
     ):
         self.style = ''
         table = Table(style=self.style, title=title_table, border_style=None)
@@ -51,11 +53,44 @@ class TableView(Panel):
                 )
         self.rows = table.rows
         self.columns = table.columns
-        super().__init__(
-            Align.center(
+        if info is not None:
+            # renderable = RenderGroup(
+            #     Align.center(
+            #         table,
+            #         vertical='top',
+            #     ),
+            #     Align.left(
+            #         info,
+            #         vertical='bottom',
+            #     ),
+            # )
+
+            # renderable = RenderGroup(
+            #     Align.center(
+            #         table,
+            #         vertical='top',
+            #     ),
+            #     Align.left(
+            #         info,
+            #         vertical='bottom',
+            #     ),
+            # )
+
+            renderable = Align.center(
+                RenderGroup(
+                    table,
+                    info,
+                ),
+                vertical='top',
+            )
+        else:
+            renderable = Align.center(
                 table,
                 vertical='top',
-            ),
+            )
+
+        super().__init__(
+            renderable,
             style=self.style,
             title=title,
             border_style=border_style,
