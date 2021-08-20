@@ -1,5 +1,4 @@
 import datetime
-from abc import ABC
 from functools import partial
 
 from chess_tournament.app import app
@@ -79,8 +78,17 @@ class FieldString(Field):
 class FieldDate(Field):
     _type = datetime.date
 
-    def serialize(self, value: datetime.date):
-        return value.isoformat()
+    def serialize(self, value: datetime.date or str or int):
+        if isinstance(value, datetime.date):
+            return value.isoformat()
+        elif isinstance(value, str):
+            # will raise an error if wrong format
+            datetime.date.fromisoformat(value)
+            return value
+        elif isinstance(value, int):
+            # will raise an error if wrong format
+            d = datetime.date.fromtimestamp(value)
+            return d.isoformat()
 
     def deserialize(self, value, name, model):
         if isinstance(value, datetime.date):

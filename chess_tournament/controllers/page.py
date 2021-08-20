@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 
 
 class Page(ABC):
-    def __init__(self, loop: 'MainController', *args, **kwargs):
+    loop: 'MainController' = None
+
+    def __init__(self, *args, **kwargs):
         self.controllers = {
             'header': None,
             'footer': None,
@@ -21,7 +23,6 @@ class Page(ABC):
         }
         self._focus = 'body'
         self._focus_controller = None
-        self.loop = loop
         self.border_style = 'blue'
         self.empty_layout = Panel(
             '',
@@ -32,7 +33,7 @@ class Page(ABC):
 
         # any page gives shortcuts info
         self.controllers['footer'] = ShortcutsLayoutController(
-            loop.shortcuts_global,
+            self.loop.shortcuts_global,
             page=self,
         )
 
@@ -46,14 +47,22 @@ class Page(ABC):
                 controller.update(getattr(self.loop, layout_name))
 
     def update_by_name(self, name):
-        controller = getattr(self, name, None)
-        if controller is not None:
-            controller.update(getattr(self.loop, name))
+        controller = self.controllers.get(name, None)
+        layout = getattr(self.loop, name, None)
+        if controller is not None and layout is not None:
+            controller.update(layout)
 
     def update_by_controller(self, controller):
         for layout_name, c in self.controllers.items():
             if id(c) == id(controller):
                 controller.update(getattr(self.loop, layout_name))
+
+    def replace_controller(self, current, *, replaced_by):
+        for layout_name, c in self.controllers.items():
+            if id(c) == id(current):
+                self.controllers[layout_name] = replaced_by
+                self._change_focus()
+                replaced_by.update(getattr(self.loop, layout_name))
 
     @abstractmethod
     def init_controllers(self):
@@ -70,7 +79,6 @@ class Page(ABC):
         if self._focus_controller is not None:
             self._focus_controller.set_border_style()
         self._focus = value
-        # for specific behavior overide change_focus not focus
         self._change_focus()
 
     def focus_by_controller(self, controller):

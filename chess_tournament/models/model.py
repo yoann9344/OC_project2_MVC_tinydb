@@ -1,6 +1,7 @@
 import collections
 import types
 from abc import ABC, ABCMeta
+from typing import Any
 
 from tinydb import TinyDB, Query
 from tinydb.queries import QueryInstance
@@ -9,6 +10,44 @@ from chess_tournament.app import app
 import chess_tournament.models.fields as chess_fields
 # from chess_tournament.models import ForeignKey, Many2One
 # from chess_tournament.models
+
+
+class QueryField(Query):
+    def __init__(self, field: 'Field'):
+        self.field = field
+        super().__init__()
+
+    def __getattr__(self, item: str):
+        # Generate a new query object with the new query path
+        # We use type(self) to get the class of the current query in case
+        # someone uses a subclass of ``Query``
+        query = type(self)(self.field)
+
+        # Now we add the accessed item to the query path ...
+        query._path = self._path + (item,)
+
+        # ... and update the query hash
+        query._hash = ('path', query._path)
+
+        return query
+
+    def __ge__(self, rhs: Any) -> QueryInstance:
+        return super().__ge__(self.field.serialize(rhs))
+
+    def __le__(self, rhs: Any) -> QueryInstance:
+        return super().__le__(self.field.serialize(rhs))
+
+    def __ne__(self, rhs: Any) -> QueryInstance:
+        return super().__ne__(self.field.serialize(rhs))
+
+    def __eq__(self, rhs: Any) -> QueryInstance:
+        return super().__eq__(self.field.serialize(rhs))
+
+    def __lt__(self, rhs: Any) -> QueryInstance:
+        return super().__lt__(self.field.serialize(rhs))
+
+    def __gt__(self, rhs: Any) -> QueryInstance:
+        return super().__gt__(self.field.serialize(rhs))
 
 
 class ObjectDoesNotExist(BaseException):
@@ -86,17 +125,15 @@ class ModelMeta(ABCMeta):
         instance = cls._instances.get(doc_id, None)
         if instance is not None:
             return instance
-        obj = super(Model, cls).__new__(cls)
-        if doc_id is None:
-            doc_id = obj._table.insert({})
-        obj.id = doc_id
-        cls._instances.update({doc_id: obj})
-        obj.__init__(*args, **kwargs)
-        return obj
+        # allow to call eventual overiden __new__
+        instance = cls.__new__(cls, *args, **kwargs)
+        return instance
 
     def __getattribute__(self, name: str):
-        if name in super().__getattribute__('_fields'):
-            return Query()[name]
+        fields = super().__getattribute__('_fields')
+        if name in fields:
+            field: Field = fields[name]
+            return QueryField(field)[name]
         return super().__getattribute__(name)
 
 
@@ -109,13 +146,37 @@ class RelationalList(collections.UserList):
     def check(self):
         self.model_obj.check_field_type(self.attr_name, self)
 
-    def append(self, *args, **kwargs):
-        super().append(*args, **kwargs)
-        self.check()
+    def model_from_id(self, doc_id):
+        return self.model_obj._fields[self.attr_name]._type.get(doc_id=doc_id)
 
-    def extend(self, *args, **kwargs):
-        super().extend(*args, **kwargs)
-        self.check()
+    def append(self, obj, *args, _prevent_infinite_recursion=False, **kwargs):
+        if isinstance(obj, int):
+            obj = self.model_from_id(obj)
+        super().append(obj, *args, **kwargs)
+        if not _prevent_infinite_recursion:
+            self.check()
+
+    def extend(self, obj, *args, _prevent_infinite_recursion=False, **kwargs):
+        models = []
+        for o in obj:
+            if isinstance(o, int):
+                models.append(self.model_from_id(o))
+            else:
+                models.append(o)
+        super().extend(models, *args, **kwargs)
+        if not _prevent_infinite_recursion:
+            self.check()
+
+    def __contains__(self, obj: int or 'Model'):
+        if isinstance(obj, Model):
+            return any(obj.id == o.id for o in self)
+        elif isinstance(obj, int):
+            return any(obj == o.id for o in self)
+        else:
+            raise TypeError(
+                'obj in RelationalList must type of int or Model'
+                f'but is type of {type(obj)}.'
+            )
 
     # WIP delete
     def pop(self, index, *args, **kwargs):
@@ -132,6 +193,16 @@ class Model(metaclass=ModelMeta):
     _fields = {}
     _instances = {}
     _db = TinyDB('db.json')
+
+    def __new__(cls, *args, **kwargs):
+        doc_id = kwargs.get('id', None)
+        instance = super(Model, cls).__new__(cls)
+        if doc_id is None:
+            doc_id = instance._table.insert({})
+        instance.id = doc_id
+        cls._instances.update({doc_id: instance})
+        instance.__init__(*args, **kwargs)
+        return instance
 
     def __init__(self, **kwargs):
         # use list 'cause _fields can change at runtime
@@ -169,12 +240,14 @@ class Model(metaclass=ModelMeta):
                    )
                 })
                 ids = value['_list']
+                instances = [model.get(doc_id=doc_id) for doc_id in ids]
                 self.__setattr__(name, RelationalList(
                     model_obj=self,
                     attr_name=name,
                 ))
-                instances = [model.get(doc_id=doc_id) for doc_id in ids]
-                getattr(self, name).extend(instances)
+                getattr(self, name).extend(
+                    instances, _prevent_infinite_recursion=True
+                )
                 # instances_linked = RelationalList(
                 #     instances,
                 # )
@@ -304,6 +377,9 @@ class Model(metaclass=ModelMeta):
 
     @classmethod
     def get(cls, query_instance: QueryInstance = None, doc_id: int = None):
+        error_not_found = ObjectDoesNotExist(
+            f'{cls.__name__} with id={doc_id} does not exist.'
+        )
         if doc_id is None and query_instance is None:
             raise TypeError(
                 'get() missing 1 required argument: '
@@ -312,16 +388,14 @@ class Model(metaclass=ModelMeta):
         elif doc_id is not None:
             row = cls._table.get(doc_id=doc_id)
             if row is None:
-                raise ObjectDoesNotExist(
-                    f'{cls.__name__} with id={doc_id} does not exist.'
-                )
+                raise error_not_found
             return cls(**row, id=doc_id)
         objects = cls._table.search(query_instance)
         nb_obj = len(objects)
         if nb_obj > 1:
             raise ValueError('Multiple objects found')
         elif nb_obj == 0:
-            return None
+            raise error_not_found
         else:
             instance = cls(**objects[0], id=objects[0].doc_id)
             return instance

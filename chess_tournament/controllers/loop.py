@@ -4,13 +4,13 @@ from typing import Type
 
 import rich
 from rich.console import Console
-from rich.live import Live
+# from rich.live import Live
 
 from .page import Page
-from chess_tournament.models.mymodels import Player, Tournament
+from chess_tournament.models.mymodels import Player
 from chess_tournament.views.view import LayoutView
 from chess_tournament.tools.key import KBHit
-from .pages import ExitPage, TablePage, WelcomPage
+from .pages import ExitPage,  WelcomPage
 
 import logging
 
@@ -114,8 +114,9 @@ class MainController(Browser):
             'x': self.go_foreward,
             'q': self.quit_dialog,
         }
-        # super().__init__(TablePage(self, model=Player))
-        super().__init__(WelcomPage(self))
+        Page.loop = self
+        # super().__init__(TablePage(model=Player))
+        super().__init__(WelcomPage())
         self.edition_mode = False
         self.buffer = ''
         self.edition_callback = None
@@ -124,7 +125,7 @@ class MainController(Browser):
         '''Open quit dialog
         shortcut_name = Quitter
         '''
-        self._page = ExitPage(self)
+        self._page = ExitPage()
         self.need_update = True
 
     def handle_shortcuts(self):

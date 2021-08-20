@@ -5,7 +5,6 @@ from rich.align import Align
 from rich.console import RenderGroup
 from rich.panel import Panel
 from rich.markdown import Markdown
-from rich.prompt import Prompt
 from rich.text import Text
 
 from chess_tournament.controllers.layout_controller import LayoutController
@@ -22,12 +21,14 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
         self.shortcuts = {
             'k': self.up,
             'j': self.down,
-            'e': self.edit,
+            'i': self.edit,
+            'g': self.create_tournament,
         }
         self.info_color = ''
         self.multiple_selection_color = 'green'
         self.double_selection_color = 'yellow'
         self.single_selection_color = 'blue'
+        self.error = ''
 
         self.explainations = inspect.cleandoc('''
             ### Création d'un tournois
@@ -35,7 +36,7 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             - Éditez le champs sélectionné avec <e>
             - Validez la selection avec <tab> ou <entrée>
             - Quand tous les champs sont remplis (vert ou jaune)
-            appuyez sur <entrée>
+            appuyez sur <g> pour créer le tournois.
         ''')
         # self.fields = [
         #     Text.assemble('Nom : ', 'TRUC'),
@@ -104,8 +105,9 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             self.selectables[self.index].style = self.info_color
 
         self.groups = RenderGroup(
-            Markdown(self.explainations.format()),
+            Markdown(self.explainations),
             *self.selectables,
+            self.error
         )
         self.align = Align.center(
             # Markdown(self.explainations),
@@ -142,10 +144,15 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
                 self.fields[name] = ''
 
     def create_tournament(self):
+        '''Create tournament and open TournamentManegerPage
+        shortcut_name = Créer le tournois
+        '''
         params = {}
         if len(self.multiple_selection) != len(self.fields):
+            self.error = 'Veuillez remplir les champs (ils doivent devenir verts)'
+            self.page.update_by_controller(self)
             return
-        for name, value in self.fields:
+        for name, value in self.fields.items():
             attr = self.name_fields[name]
             try:
                 if attr == 'game_type':
@@ -153,15 +160,18 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
                     duration = int(value)
                     value = GameType(duration=duration)
                 else:
-                    value = Tournament._fields[attr].convert(value)
-            except Exception:
-                self.error = 'Plop'
+                    value = Tournament._fields[attr].convert(value, attr, Tournament)
+            except Exception as error:
+                self.error = 'Plop' + str(error)
                 break
             params[attr] = value
         else:
             tournament = Tournament(**params)
             self.init_fields()
-            self.page.loop.go_to(SelectTournamentPlayersPage(tournament))
+            from chess_tournament.controllers.pages.tournament import TournamentPage
+            self.page.loop.go_to(TournamentPage(tournament))
+            # self.page.loop.go_to(SelectTournamentPlayersPage(tournament))
+        self.page.update_by_controller(self)
 
     def validate_input(self, field_name, input_ended):
         input_value = self.fields[field_name]

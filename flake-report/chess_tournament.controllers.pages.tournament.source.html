@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>chess_tournament/controllers/pages/tournament.py - flake8 annotated source</title>
+      <meta http-equiv="Content-Type" value="text/html; charset=UTF-8">
+      <link rel="stylesheet" href="styles.css">
+   </head>
+   <body>
+      <div id="masthead" class="sev-3"></div>
+      <div id="page">
+         <h1>
+            <a href="chess_tournament.controllers.pages.tournament.report.html">
+               <img src="back.svg" alt="&#x2B05;">
+               chess_tournament/controllers/pages/tournament.py source
+            </a>
+         </h1>
+
+         <div id="doc">
+            <div id="l1"
+               class="code sev-3  le">
+               <ul class="violations">
+               
+                  <li>
+                     <span class="count sev-3">
+                        D100
+                     </span>
+                     Missing docstring in public module</li>
+               
+               </ul><tt><i>1</i> <span class="kn">from</span> <span class="nn">chess_tournament.controllers.page</span> <span class="kn">import</span> <span class="n">Page</span></tt>
+            </div>
+            <div id="l2"
+               class="code sev- "><tt><i>2</i> &nbsp;</tt>
+            </div>
+            <div id="l3"
+               class="code sev- "><tt><i>3</i> <span class="kn">from</span> <span class="nn">..layout_controllers</span> <span class="kn">import</span> <span class="p">(</span></tt>
+            </div>
+            <div id="l4"
+               class="code sev- "><tt><i>4</i>     <span class="n">TournamentManagerLayoutController</span><span class="p">,</span></tt>
+            </div>
+            <div id="l5"
+               class="code sev- "><tt><i>5</i> <span class="p">)</span></tt>
+            </div>
+            <div id="l6"
+               class="code sev- "><tt><i>6</i> <span class="kn">from</span> <span class="nn">chess_tournament.models</span> <span class="kn">import</span> <span class="n">mymodels</span></tt>
+            </div>
+            <div id="l7"
+               class="code sev- "><tt><i>7</i> &nbsp;</tt>
+            </div>
+            <div id="l8"
+               class="code sev- "><tt><i>8</i> &nbsp;</tt>
+            </div>
+            <div id="l9"
+               class="code sev-3  le">
+               <ul class="violations">
+               
+                  <li>
+                     <span class="count sev-3">
+                        D101
+                     </span>
+                     Missing docstring in public class</li>
+               
+               </ul><tt><i>9</i> <span class="k">class</span> <span class="nc">TournamentPage</span><span class="p">(</span><span class="n">Page</span><span class="p">):</span></tt>
+            </div>
+            <div id="l10"
+               class="code sev-3  le">
+               <ul class="violations">
+               
+                  <li>
+                     <span class="count sev-3">
+                        D102
+                     </span>
+                     Missing docstring in public method</li>
+               
+               </ul><tt><i>10</i>     <span class="k">def</span> <span class="nf">init_controllers</span><span class="p">(</span></tt>
+            </div>
+            <div id="l11"
+               class="code sev- "><tt><i>11</i>         <span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l12"
+               class="code sev- "><tt><i>12</i>         <span class="n">tournament</span><span class="p">:</span> <span class="n">mymodels</span><span class="o">.</span><span class="n">Tournament</span><span class="p">,</span></tt>
+            </div>
+            <div id="l13"
+               class="code sev- "><tt><i>13</i>         <span class="o">*</span><span class="n">args</span><span class="p">,</span></tt>
+            </div>
+            <div id="l14"
+               class="code sev- "><tt><i>14</i>         <span class="o">**</span><span class="n">kwargs</span></tt>
+            </div>
+            <div id="l15"
+               class="code sev- "><tt><i>15</i>     <span class="p">):</span></tt>
+            </div>
+            <div id="l16"
+               class="code sev- "><tt><i>16</i>         <span class="c1"># tree = TournamentTreeLayoutController(page=self)</span></tt>
+            </div>
+            <div id="l17"
+               class="code sev- "><tt><i>17</i>         <span class="c1"># scores = ScoresLayoutController(page=self)</span></tt>
+            </div>
+            <div id="l18"
+               class="code sev- "><tt><i>18</i>         <span class="n">manager</span> <span class="o">=</span> <span class="n">TournamentManagerLayoutController</span><span class="p">(</span><span class="n">tournament</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></tt>
+            </div>
+            <div id="l19"
+               class="code sev- "><tt><i>19</i>         <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">update</span><span class="p">({</span></tt>
+            </div>
+            <div id="l20"
+               class="code sev- "><tt><i>20</i>             <span class="s1">&#39;body&#39;</span><span class="p">:</span> <span class="n">manager</span><span class="p">,</span></tt>
+            </div>
+            <div id="l21"
+               class="code sev- "><tt><i>21</i>             <span class="c1"># &#39;info&#39;: tree,</span></tt>
+            </div>
+            <div id="l22"
+               class="code sev- "><tt><i>22</i>         <span class="p">})</span></tt>
+            </div>
+            <div id="l23"
+               class="code sev- "><tt><i>23</i>         <span class="bp">self</span><span class="o">.</span><span class="n">focus</span> <span class="o">=</span> <span class="s1">&#39;body&#39;</span></tt>
+            </div>
+            
+         </div>
+      </div>
+   </body>
+</html>

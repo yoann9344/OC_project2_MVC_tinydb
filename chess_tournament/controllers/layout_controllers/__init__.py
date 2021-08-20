@@ -5,3 +5,4 @@ from .table import TableLayoutController
 from .welcome import WelcomeLayoutController
 from .field import FieldLayoutController
 from .tournament_creator import TournamentCreatorLayoutController
+from .tournament_manager import TournamentManagerLayoutController

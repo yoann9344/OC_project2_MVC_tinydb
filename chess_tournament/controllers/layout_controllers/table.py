@@ -1,4 +1,5 @@
 import operator
+from typing import Callable
 
 from rich.layout import Layout
 
@@ -13,7 +14,7 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         self,
         model: models.Model,
         headers: list[str] = None,
-        shortcuts: dict = {},
+        LC_callback_to_send_selection: Callable = None,
         *args,
         **kwargs,
     ):
@@ -28,10 +29,14 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
             'v': self.select,
             'V': self.select_all,
             '/': self.start_filtering,
-            'y': self.send_selected_items,
         }
+        if LC_callback_to_send_selection is not None:
+            self.shortcuts['y'] = self.send_selected_items
+
+        self.title = None
         self.model = model
         self.headers = headers or ['id'] + list(self.model._fields.keys())
+        self.LC_callback_to_send_selection = LC_callback_to_send_selection
         self.sort_by = self.headers[0]
         self.sort_index = 0
         self.sort_reversed = False
@@ -66,7 +71,7 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
             self.headers,
             self.data,
             selection=selection,
-            title=f'Table {self.model.__name__}',
+            title=self.title or f'Table {self.model.__name__}',
             border_style=self.border_style,
             multiple_selection=self.multiple_selection,
             info=self.info,
@@ -106,8 +111,11 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         self.page.update_by_controller(self)
 
     def send_selected_items(self):
+        '''Confirm the selection, only used with a callback
+        shortcut_name = Valider la sélection
+        '''
         selected_ids = {self.data[i].id for i in self.multiple_selection}
-        self.LC_callback_to_send_selection(selected_ids)
+        self.info = self.LC_callback_to_send_selection(selected_ids)
 
     def start_filtering(self):
         '''Launch edit mode to filter rows

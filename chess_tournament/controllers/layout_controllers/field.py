@@ -1,9 +1,8 @@
 from rich.layout import Layout
 
-from chess_tournament import models
 from chess_tournament.controllers.layout_controller import LayoutController
 from chess_tournament.views.table import TableView
-from .plugins import SelectablePlugin, EditablePlugin
+from .plugins import SelectablePlugin
 
 
 class FieldLayoutController(LayoutController, SelectablePlugin):
@@ -25,7 +24,7 @@ class FieldLayoutController(LayoutController, SelectablePlugin):
         field, name, obj = self.data
         if field and name and obj:
             keys = obj._fields.keys()
-            values = (str(getattr(row_object, k)) for k in keys)
+            values = (str(getattr(self.row_object, k)) for k in keys)
             self.table = TableView(
                 ['key', 'value'],
                 list(zip(keys, values)),

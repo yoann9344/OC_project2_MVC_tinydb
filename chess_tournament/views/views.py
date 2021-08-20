@@ -7,13 +7,11 @@ from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.pretty import Pretty
-from rich.table import Table
 
 from tools.key import KBHit
 
 
 class Placeholder:
-    to_render = 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
@@ -61,7 +59,7 @@ class View():
         self.info = side['info']
         self.dialog = side['dialog']
 
-        self.footer._renderable = _Placeholder('Super Titre')
+        self.footer._renderable = Placeholder('Super Titre')
 
         self.line = 'PLOP'
 

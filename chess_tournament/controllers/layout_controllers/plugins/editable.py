@@ -3,7 +3,7 @@ import abc
 
 class EditablePlugin(abc.ABC):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.editable_callback = None
         self.editable_activated = False
 
@@ -39,4 +39,3 @@ class EditablePlugin(abc.ABC):
             desactivated=not self.editable_activated,
             cancelled=cancelled,
         )
-

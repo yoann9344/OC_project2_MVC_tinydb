@@ -9,8 +9,9 @@ class Player(models.Model):
     # sexe =  ...
     # I should create and use a positive integer field
     tournaments = models.Many2Many('Tournament', related_name='players')
-    rounds = models.Many2Many('Round', related_name='players')
     rank = models.FieldInteger()
+    games_with_white = models.Many2One('Game', related_name='white')
+    games_with_black = models.Many2One('Game', related_name='black')
 
     def __str__(self):
         return self.name

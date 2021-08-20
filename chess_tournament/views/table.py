@@ -7,6 +7,10 @@ from rich.table import Table
 from chess_tournament.models import Model
 
 
+class CustomRow():
+    pass
+
+
 class TableView(Panel):
     def __init__(
         self,
@@ -44,6 +48,11 @@ class TableView(Panel):
             elif isinstance(row, tuple):
                 table.add_row(
                     *[row[j] for j in range(len(headers))],
+                    style=color
+                )
+            elif isinstance(row, CustomRow):
+                table.add_row(
+                    *[str(getattr(row, h, '')) for h in headers],
                     style=color
                 )
             else:
