@@ -18,6 +18,11 @@ class Tournament(models.Model):
     description = models.FieldString(is_nullable=True)
     rounds = models.Many2One('Round', related_name='tournament')
 
+    def is_finished(self):
+        if len(self.rounds) >= self.nb_rounds:
+            return True
+        return False
+
     def add_player(self, player: 'Player'):
         # does not add player if already in the tournament
         # neither if tournament has started (has rounds)

@@ -8,9 +8,6 @@ from ..layout_controllers import (
 class WelcomPage(Page):
     def init_controllers(self, *args, **kwargs):
         self.controllers.update({
-            'body': TournamentCreatorLayoutController(self),
-            'info': WelcomeLayoutController(self),
-            # 'info': TournamentCreatorLayoutController(self),
-            # 'body': WelcomeLayoutController(self),
+            'body': WelcomeLayoutController(self),
         })
         self.focus = 'body'

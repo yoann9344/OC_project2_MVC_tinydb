@@ -41,7 +41,13 @@ class WelcomeLayoutController(LayoutController):
         '''Go to page create tournament
         shortcut_name = Créer un tournoi
         '''
-        pass
+        from ..pages import TournamentCreatorPage
+
+        self.page.loop.go_to(
+            TournamentCreatorPage(
+                loop=self.page.loop,
+            )
+        )
 
     def show_tournaments(self):
         '''Go to page to show tournaments

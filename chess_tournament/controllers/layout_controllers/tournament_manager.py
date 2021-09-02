@@ -84,9 +84,10 @@ class TournamentManagerLayoutController(LayoutController):
         layout.update(self.panel_view)
 
     def popup_select_players_layout(self):
-        '''Shows up a table to select players
+        """Show up a table to select players.
+
         shortcut_name = Sélectionner des joueurs
-        '''
+        """
         self.select_players_LC = TableLayoutController(
             mymodels.Player,
             LC_callback_to_send_selection=self.select_players_callback,
@@ -101,9 +102,10 @@ class TournamentManagerLayoutController(LayoutController):
         self.page.update_by_name('dialog')
 
     def edit_rounds(self):
-        '''Give focus to rounds' controller
+        """Give focus to rounds' controller.
+
         shortcut_name = 'Éditer les résultats des parties'
-        '''
+        """
         self.page.controllers['info'].take_focus_from(self)
 
     def show_current_round(self):
@@ -114,13 +116,29 @@ class TournamentManagerLayoutController(LayoutController):
         self.page.controllers['info'] = RoundLayoutController(
             current_round, page=self.page
         )
-        self.page.update_by_name('info')
         self.shortcuts['g'] = self.edit_rounds
+        self.page.update()  # update 'info' and 'shortcuts'
+
+    def get_focus_back(self):
+        """Handle when get back focus"""
+        if self.tournament.get_current_round() is None:
+            self.shortcuts['g'] = self.generate_pairs
+            if self.tournament.is_finished():
+                self.explainations = inspect.cleandoc('''
+                    Le tournois est terminé !
+                ''')
+            else:
+                self.explainations = inspect.cleandoc('''
+                    Le tour est terminé.
+                    Appuyez sur <g> pour lancer le tirage au sort du prochain tour.
+                ''')
+            self.page.update_by_controller(self)
 
     def generate_pairs(self):
-        '''Generate pairs
+        """Generate pairs.
+
         shortcut_name = Générer les pairs
-        '''
+        """
         def generate_games(turn, players_sorted):
             nb_players = len(players_sorted)
             half = int(nb_players/2)
@@ -153,6 +171,7 @@ class TournamentManagerLayoutController(LayoutController):
         self.shortcuts.pop('g')
         self.show_scores()
         self.show_current_round()
+        self.edit_rounds()
 
     def select_players_callback(self, players_ids: set):
         if len(players_ids) > self.missing_players:

@@ -10,7 +10,6 @@ from rich.text import Text
 from chess_tournament.controllers.layout_controller import LayoutController
 from chess_tournament.models.mymodels import Tournament, GameType
 from .plugins import EditablePlugin, SelectablePlugin
-# from ..pages import SelectTournamentPlayersPage
 
 
 class TournamentCreatorLayoutController(LayoutController, EditablePlugin, SelectablePlugin):
@@ -82,6 +81,7 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             title='',
             border_style=self.border_style,
         )
+        self.index = 0
         self.page.update_by_controller(self)
 
     def update(self, layout: Layout):
@@ -168,9 +168,8 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
         else:
             tournament = Tournament(**params)
             self.init_fields()
-            from chess_tournament.controllers.pages.tournament import TournamentPage
-            self.page.loop.go_to(TournamentPage(tournament))
-            # self.page.loop.go_to(SelectTournamentPlayersPage(tournament))
+            from chess_tournament.controllers.pages import TournamentManagerPage
+            self.page.loop.go_to(TournamentManagerPage(tournament))
         self.page.update_by_controller(self)
 
     def validate_input(self, field_name, input_ended):

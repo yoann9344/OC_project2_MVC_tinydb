@@ -28,48 +28,70 @@ class RoundLayoutController(TableLayoutController):
             '3': self.equality,
             '0': self.game_not_finished,
         }
-        self.data = round_.games
+        self.data: list[mymodels.Game] = round_.games
+        if self.data:
+            self.index = 0
         self.scores_LC = scores_LC
 
+    def check_all_games_finished(self):
+        if self.round_.is_finished():
+            self.back_to_controller()
+
     def white_won(self):
-        '''Change game result, white won
+        """Change game result, white won.
+
         shortcut_name = Les blancs ont gagné
-        '''
+        """
         if 0 <= self.index < len(self.data):
             game = self.data[self.index]
             game.white_won()
             game.save()
             self.page.update_by_controller(self)
             self.page.update()
+            self.check_all_games_finished()
+            self.index += 1
+            self.page.update_by_controller(self)
 
     def black_won(self):
-        '''Change game result, black won
+        """Change game result, black won.
+
         shortcut_name = Les noirs ont gagné
-        '''
+        """
         if 0 <= self.index < len(self.data):
             game = self.data[self.index]
             game.black_won()
             game.save()
             self.page.update_by_controller(self)
             self.page.update()
+            self.check_all_games_finished()
+            self.index += 1
+            self.page.update_by_controller(self)
 
     def equality(self):
-        '''Change game result, equality
+        """Change game result, equality.
+
         shortcut_name = Match nul
-        '''
+        """
         if 0 <= self.index < len(self.data):
             game = self.data[self.index]
             game.equality()
             game.save()
             self.page.update_by_controller(self)
             self.page.update()
+            self.check_all_games_finished()
+            self.index += 1
+            self.page.update_by_controller(self)
 
     def game_not_finished(self):
-        '''Change game result, game still in progress
+        """Change game result, game still in progress.
+
         shortcut_name = 'Match en cours'
-        '''
+        """
         if 0 <= self.index < len(self.data):
             game = self.data[self.index]
             game.not_finished()
             game.save()
             self.page.update()
+            self.check_all_games_finished()
+            self.index += 1
+            self.page.update_by_controller(self)

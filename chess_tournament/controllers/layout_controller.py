@@ -41,3 +41,10 @@ class LayoutController(ABC):
         for key in self._focus_shortcuts:
             self.shortcuts.pop(key, None)
         self.page.focus_by_controller(self.controller_which_gave_focus)
+        get_focus_back_fn = getattr(
+            self.controller_which_gave_focus,
+            'get_focus_back',
+            None,
+        )
+        if get_focus_back_fn:
+            get_focus_back_fn()
