@@ -1,10 +1,15 @@
+from tinydb import TinyDB
 from datetime import date
-# from .models.test import Player, Ref, Element
-from .models.mymodels import Player, Tournament, Date, GameType
-from chess_tournament.controllers import MainController
 
 
-def run():
+def init_db():
+    # from .models.test import Player, Ref, Element
+    from .models.mymodels import Player, Tournament, Date, GameType
+    # reset db
+    db = TinyDB('db.json')
+    db.drop_tables()
+
+    # reconstruct db
     if len(Tournament.all()) == 0:
         GameType(duration=2)
         blitz = GameType(duration=5)
@@ -68,6 +73,3 @@ def run():
     # t = Tournament.all()
     # print(t[0].dates)
     # print(t[0].dates[0].tournament)
-
-    controller = MainController()
-    controller.loop()

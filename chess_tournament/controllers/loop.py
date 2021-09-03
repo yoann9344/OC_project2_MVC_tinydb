@@ -4,10 +4,9 @@ from typing import Type
 
 import rich
 from rich.console import Console
-# from rich.live import Live
+from rich.live import Live
 
 from .page import Page
-from chess_tournament.models.mymodels import Player
 from chess_tournament.views.view import LayoutView
 from chess_tournament.tools.key import KBHit
 from .pages import ExitPage,  WelcomPage
@@ -78,30 +77,10 @@ class Browser():
 
 class MainController(Browser):
     def __init__(self):
-        nb_players = len(Player.all())
-
-        import string
-        import random
-        import datetime
-
-        def name_generator():
-            chars = chars = string.ascii_letters
-            size = random.randint(3, 10)
-            return ''.join(random.choice(chars) for _ in range(size))
-
-        while nb_players < 4:
-            Player(
-                name=name_generator(),
-                firstname=name_generator(),
-                birth=datetime.date(1983, 1, 22),
-                rank=random.randint(2400, 2800)
-            )
-            nb_players += 1
-
         self.console = Console()
         self.log = self.console.log
         layout = LayoutView()
-        self.layout = layout
+        self.layout_view = layout
 
         self.header = layout.header
         self.footer = layout.footer
@@ -179,31 +158,25 @@ class MainController(Browser):
         self.buffer = ''
 
     def loop(self):
-        layout = self.layout
         self.kb = KBHit()
         self.last_codes = None
-        # with Live(
-        #     layout.layout,
-        #     refresh_per_second=20,
-        #     screen=True,
-        #     console=self.console
-        # ) as live:
-        while 1:
-            try:
+        layout = self.layout_view.layout
+
+        try:
+            with Live(
+                layout,
+                refresh_per_second=20,
+                screen=True,
+                console=self.console,
+            ) as live:
                 while 1:
                     self.handle_shortcuts()
 
                     if self.need_update:
                         self._page.update()
                         self.need_update = False
-
                     if self.exit_program:
                         break
-                    rich.print(layout.layout)
-                    # live.update(layout.layout)
-                    time.sleep(0.02)
-            except Exception:
-                self.console.print_exception(extra_lines=5, show_locals=True)
-                break
-            if self.exit_program:
-                break
+                    live.update(layout)
+        except Exception:
+            self.console.print_exception(extra_lines=5, show_locals=True)
