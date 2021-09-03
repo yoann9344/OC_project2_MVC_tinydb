@@ -52,9 +52,10 @@ class Browser():
             self._move()
 
     def go_backward(self):
-        '''Go to the previous page visited
+        """Go to the previous page visited.
+
         shortcut_name = Page précédente
-        '''
+        """
         self._check_index_value()
         if self.index == 0:
             return
@@ -63,9 +64,10 @@ class Browser():
         self._move()
 
     def go_foreward(self):
-        '''Go to the next page visited
+        """Go to the next page visited.
+
         shortcut_name = Page suivante
-        '''
+        """
         self._check_index_value()
         if self.index == len(self.history) - 1:
             return
@@ -122,9 +124,10 @@ class MainController(Browser):
         self.edition_callback = None
 
     def quit_dialog(self):
-        '''Open quit dialog
+        """Open quit dialog.
+
         shortcut_name = Quitter
-        '''
+        """
         self._page = ExitPage()
         self.need_update = True
 

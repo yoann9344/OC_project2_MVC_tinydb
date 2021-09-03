@@ -1,3 +1,5 @@
+from types import MethodType
+
 import inspect
 
 from rich.layout import Layout
@@ -38,9 +40,10 @@ class WelcomeLayoutController(LayoutController):
         layout.update(self.panel_view)
 
     def new_tournament(self):
-        '''Go to page create tournament
+        """Go to page create tournament.
+
         shortcut_name = Créer un tournoi
-        '''
+        """
         from ..pages import TournamentCreatorPage
 
         self.page.loop.go_to(
@@ -50,22 +53,45 @@ class WelcomeLayoutController(LayoutController):
         )
 
     def show_tournaments(self):
-        '''Go to page to show tournaments
+        """Go to page to show tournaments.
+
         shortcut_name = Liste des tournois
-        '''
+        """
         from ..pages import TablePage
-        self.page.loop.go_to(
-            TablePage(
-                loop=self.page.loop,
-                model=mymodels.Tournament,
-                headers=['id', 'name', 'place'],
-            )
+        from ..layout_controllers import TableLayoutController
+
+        def edit_tournament(self):
+            """Edit the tournament.
+
+            shortcut_name = Gérer le tournois.
+            """
+            from chess_tournament.controllers.pages import TournamentManagerPage
+            if not self.multiple_selection and 0 <= self.index < len(self.data):
+                self.page.loop.go_to(
+                    TournamentManagerPage(
+                        loop=self.page.loop,
+                        tournament=self.data[self.index],
+                    )
+                )
+
+        page = TablePage(
+            loop=self.page.loop,
+            model=mymodels.Tournament,
+            headers=['id', 'name', 'place'],
         )
+        controller: TableLayoutController = page.controllers['body']
+        controller.edit_row = MethodType(edit_tournament, controller)
+        controller.shortcuts['c'] = controller.edit_row
+        # page.update_by_controller(controller)
+        # page._change_focus()  # to update the new edit method
+        self.page.loop.go_to(page)
+        # controller.edit_row()
 
     def show_players(self):
-        '''Go to page to show players
+        """Go to page to show players.
+
         shortcut_name = Liste des joueurs
-        '''
+        """
         from ..pages import TablePage
         self.page.loop.go_to(
             TablePage(

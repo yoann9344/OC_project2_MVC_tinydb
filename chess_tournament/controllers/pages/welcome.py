@@ -1,8 +1,6 @@
 from chess_tournament.controllers.page import Page
 
-from ..layout_controllers import (
-    WelcomeLayoutController, TournamentCreatorLayoutController
-)
+from ..layout_controllers import WelcomeLayoutController
 
 
 class WelcomPage(Page):

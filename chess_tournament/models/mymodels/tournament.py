@@ -44,8 +44,7 @@ class Date(models.Model):
     tournaments = models.Many2Many(Tournament, related_name='dates')
 
     def __new__(cls, *args, date=datetime.date.today(), **kwargs):
-        '''Do not duplicate the date if it already exist
-        '''
+        """Do not duplicate the date if it already exist."""
         kwargs['date'] = date
         if kwargs.get('id', None) is not None:
             return super().__new__(cls, *args, **kwargs)
@@ -142,8 +141,7 @@ class GameType(models.Model):
     tournaments = models.Many2One(Tournament, related_name='game_type')
 
     def __new__(cls, *args, duration, **kwargs):
-        '''Do not duplicate the game type if it already exist
-        '''
+        """Do not duplicate the game type if it already exist."""
         kwargs['duration'] = duration
         if kwargs.get('id', None) is not None:
             return super().__new__(cls, *args, **kwargs)

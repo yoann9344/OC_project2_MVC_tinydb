@@ -3,7 +3,6 @@ from chess_tournament.controllers.page import Page
 from ..layout_controllers import (
     TournamentCreatorLayoutController,
 )
-from chess_tournament.models import mymodels
 
 
 class TournamentCreatorPage(Page):

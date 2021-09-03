@@ -123,9 +123,10 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
         layout.update(self.panel_view)
 
     def edit(self):
-        '''Edit mode test
+        """Edit mode test.
+
         shortcut_name = Éditer
-        '''
+        """
         if 0 <= self.index < len(self.selectables):
             # self.activate_edition(callback=self.buffer, multiline=True)
             self.activate_edition(callback=self.buffer, multiline=False)
@@ -144,9 +145,10 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
                 self.fields[name] = ''
 
     def create_tournament(self):
-        '''Create tournament and open TournamentManegerPage
+        """Create tournament and open TournamentManegerPage.
+
         shortcut_name = Créer le tournois
-        '''
+        """
         params = {}
         if len(self.multiple_selection) != len(self.fields):
             self.error = 'Veuillez remplir les champs (ils doivent devenir verts)'
@@ -169,7 +171,12 @@ class TournamentCreatorLayoutController(LayoutController, EditablePlugin, Select
             tournament = Tournament(**params)
             self.init_fields()
             from chess_tournament.controllers.pages import TournamentManagerPage
-            self.page.loop.go_to(TournamentManagerPage(tournament))
+            self.page.loop.go_to(
+                TournamentManagerPage(
+                    loop=self.page.loop,
+                    tournament=tournament,
+                )
+            )
         self.page.update_by_controller(self)
 
     def validate_input(self, field_name, input_ended):

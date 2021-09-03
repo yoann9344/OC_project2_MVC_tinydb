@@ -45,6 +45,25 @@ class TournamentManagerLayoutController(LayoutController):
                 - un tri par colonne ; <s> pour changer la colonne ;
                  <S> pour changer l'ordre (croissant, décroissant)
             ''')
+        elif self.tournament.is_finished():
+            self.explainations = inspect.cleandoc('''
+                Le tournois est terminé !
+            ''')
+        elif len(tournament.rounds) == 0:
+            self.explainations = inspect.cleandoc('''
+                Le compte est bon ! Vous pouvez lancer le tirage au sort en
+                appuyant sur <g>.
+            ''')
+        elif tournament.get_current_round is None:
+            self.explainations = inspect.cleandoc('''
+                Le tour est terminé.
+                Appuyez sur <g> pour lancer le tirage au sort du prochain tour.
+            ''')
+        else:
+            self.explainations = inspect.cleandoc('''
+                Le tour n'est pas terminé.
+                Certaines parties sont encore en cours.
+            ''')
 
         self.groups = RenderGroup(
             Markdown(self.description),
@@ -120,7 +139,7 @@ class TournamentManagerLayoutController(LayoutController):
         self.page.update()  # update 'info' and 'shortcuts'
 
     def get_focus_back(self):
-        """Handle when get back focus"""
+        """Handle when get back focus."""
         if self.tournament.get_current_round() is None:
             self.shortcuts['g'] = self.generate_pairs
             if self.tournament.is_finished():
@@ -155,17 +174,21 @@ class TournamentManagerLayoutController(LayoutController):
             tournament=self.tournament,
             name=f'Round {len(tournament.rounds) + 1}',
         )
-        # at turn 1 all score are 0
-        players_score = sum(
-            (round_.get_players_score() for round_ in tournament.rounds),
-            collections.Counter()
-        )
-        p_by_score = sorted(
-            tournament.players,
-            key=lambda player: players_score[player.id],
-        )
-        p_by_score_and_rank = sorted(p_by_score, key=attrgetter('rank'))
-        generate_games(new_round, list(reversed(p_by_score_and_rank)))
+        if len(tournament.rounds) == 1:
+            p_by_score_or_rank = sorted(
+                tournament.players,
+                key=attrgetter('rank'),
+            )
+        else:
+            players_score = sum(
+                (round_.get_players_score() for round_ in tournament.rounds),
+                collections.Counter()
+            )
+            p_by_score_or_rank = sorted(
+                tournament.players,
+                key=lambda player: players_score[player.id],
+            )
+        generate_games(new_round, list(reversed(p_by_score_or_rank)))
 
         # pairs generated remove the shortcut
         self.shortcuts.pop('g')

@@ -41,6 +41,8 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         self.sort_index = 0
         self.sort_reversed = False
         self.data: list[models.Model] = self.model.all()
+        if self.data:
+            self.index = 0
         self.table = TableView(
             self.headers,
             self.data,
@@ -82,15 +84,17 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         layout.update(self.table)
 
     def edit_row(self):
-        '''Edit selected row
+        """Edit selected row.
+
         shortcut_name = Éditer la sélection
-        '''
+        """
         self.detail_selection_LC.take_focus_from(self)
 
     def delete_row(self):
-        '''Delete selected row
+        """Delete selected row.
+
         shortcut_name = Supprimer la sélection
-        '''
+        """
         if not self.multiple_selection:
             indexes = [self.index]
         else:
@@ -111,16 +115,18 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         self.page.update_by_controller(self)
 
     def send_selected_items(self):
-        '''Confirm the selection, only used with a callback
+        """Confirm the selection, only used with a callback.
+
         shortcut_name = Valider la sélection
-        '''
+        """
         selected_ids = {self.data[i].id for i in self.multiple_selection}
         self.info = self.LC_callback_to_send_selection(selected_ids)
 
     def start_filtering(self):
-        '''Launch edit mode to filter rows
+        """Launch edit mode to filter rows.
+
         shortcut_name = Filtrer
-        '''
+        """
         self._previous_filter = self.data
         self._previous_selection = self.index
         self._previous_multiple_selection = self.multiple_selection
@@ -179,9 +185,10 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         }
 
     def sort(self):
-        '''Sort row by next column
+        """Sort row by next column.
+
         shortcut_name = Trier la table
-        '''
+        """
         # self.handle_selection_before_sorting()
         index = self.sort_index + 1
         if index >= len(self.headers):
@@ -193,9 +200,10 @@ class TableLayoutController(LayoutController, SelectablePlugin, EditablePlugin):
         self.page.update_by_controller(self)
 
     def reverse_sort(self):
-        '''Reverse the current order
+        """Reverse the current order.
+
         shortcut_name = Inverser le tri
-        '''
+        """
         self.sort_reversed ^= True
         self._sort()
         self.page.update_by_controller(self)
