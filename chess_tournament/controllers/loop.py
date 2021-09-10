@@ -1,8 +1,6 @@
-import copy
-import time
+"""Module to start the program using MainController."""
 from typing import Type
 
-import rich
 from rich.console import Console
 from rich.live import Live
 
@@ -16,7 +14,7 @@ import logging
 logging.basicConfig(filename='logs.log', level=logging.INFO)
 
 
-class Browser():
+class _Browser():
     def __init__(self, start_page: Type['Page']):
         self.history = [start_page]
         self.index = 0
@@ -75,7 +73,9 @@ class Browser():
         self._move()
 
 
-class MainController(Browser):
+class MainController(_Browser):
+    """Main program, controlling everything, start it with loop()."""
+
     def __init__(self):
         self.console = Console()
         self.log = self.console.log
@@ -96,7 +96,6 @@ class MainController(Browser):
             'q': self.quit_dialog,
         }
         Page.loop = self
-        # super().__init__(TablePage(model=Player))
         super().__init__(WelcomPage())
         self.edition_mode = False
         self.buffer = ''
@@ -110,7 +109,8 @@ class MainController(Browser):
         self._page = ExitPage()
         self.need_update = True
 
-    def handle_shortcuts(self):
+    def handle_keyboard(self):
+        """Handle shortcuts and edition mode's buffer."""
         entries = self.kb.read()
         codes = [ord(c) for c in entries]
 
@@ -136,21 +136,22 @@ class MainController(Browser):
             self.edition_callback(self.buffer, entries)
             return
 
-        if codes:
-            self.last_codes = copy.deepcopy(codes)
+        elif codes:
             self._page.codes = codes
 
-        for code, func in (self.shortcuts | self.shortcuts_global).items():
-            if isinstance(code, str):
-                code = ord(code)
-            if code in codes:
-                func()
+            for code, func in (self.shortcuts | self.shortcuts_global).items():
+                if isinstance(code, str):
+                    code = ord(code)
+                if code in codes:
+                    func()
 
     def start_edition_mode(self, callback):
+        """Handle edition mode, to desactivate shortcuts and crite text."""
         self.edition_mode = True
         self.edition_callback = callback
 
     def stop_edition_mode(self, force_stop=False):
+        """Stop the edition mode. Reactivate shortcuts."""
         if not force_stop:
             self.edition_callback(self.buffer, '', desactivated=True)
         self.edition_mode = False
@@ -158,19 +159,19 @@ class MainController(Browser):
         self.buffer = ''
 
     def loop(self):
+        """Start main loop."""
         self.kb = KBHit()
-        self.last_codes = None
         layout = self.layout_view.layout
 
         try:
             with Live(
                 layout,
-                refresh_per_second=20,
+                refresh_per_second=10,
                 screen=True,
                 console=self.console,
             ) as live:
                 while 1:
-                    self.handle_shortcuts()
+                    self.handle_keyboard()
 
                     if self.need_update:
                         self._page.update()

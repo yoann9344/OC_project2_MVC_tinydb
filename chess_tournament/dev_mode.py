@@ -73,3 +73,22 @@ def init_db():
     # t = Tournament.all()
     # print(t[0].dates)
     # print(t[0].dates[0].tournament)
+    nb_players = len(Player.all())
+
+    import string
+    import random
+    import datetime
+
+    def name_generator():
+        chars = chars = string.ascii_letters
+        size = random.randint(3, 10)
+        return ''.join(random.choice(chars) for _ in range(size))
+
+    while nb_players < 4:
+        Player(
+            name=name_generator(),
+            firstname=name_generator(),
+            birth=datetime.date(1983, 1, 22),
+            rank=random.randint(2400, 2800)
+        )
+        nb_players += 1

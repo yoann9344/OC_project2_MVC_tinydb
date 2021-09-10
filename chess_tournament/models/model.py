@@ -10,6 +10,9 @@ from chess_tournament.app import app
 import chess_tournament.models.fields as chess_fields
 # from chess_tournament.models import ForeignKey, Many2One
 # from chess_tournament.models
+import logging
+
+logging.basicConfig(filename='logs.log', level=logging.INFO)
 
 
 class QueryField(Query):
@@ -406,6 +409,7 @@ class Model(metaclass=ModelMeta):
         query_instance: QueryInstance = None,
         doc_ids: list[int] = []
     ):
+        """Filter using the query or the id."""
         if not doc_ids and query_instance is None:
             raise TypeError(
                 'get() missing 1 required argument: '
@@ -420,6 +424,7 @@ class Model(metaclass=ModelMeta):
         ))
 
     def delete(self):
+        """Delete object and its relations, unless if they are protected."""
         id_ = self.id
         # WIP delete relations
         for name, field in self._fields.items():
@@ -431,11 +436,14 @@ class Model(metaclass=ModelMeta):
                     continue
                 elif related_obj is None:
                     continue
+                # if not isinstance(related_obj, list):
+                #     related_obj = [related_obj]
                 related_name = field.related_name
                 obj_has_many = isinstance(
                     field,
                     (chess_fields.ForeignKey, chess_fields.Many2Many)
                 )
+                logging.info(related_obj)
                 for obj in list(related_obj):
                     if obj_has_many:
                         obj_references = getattr(obj, related_name, None)
@@ -454,6 +462,10 @@ class Model(metaclass=ModelMeta):
         self.__class__._instances.pop(id_)
 
     def __repr__(self):
+        """Represent the object.
+
+        Uses the __str__ method if defined or uses the __repr__
+        """
         if isinstance(self.__str__, types.MethodWrapperType):
             return super().__repr__()
         else:
