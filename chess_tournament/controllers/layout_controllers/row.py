@@ -26,13 +26,14 @@ class RowLayoutController(LayoutController, SelectablePlugin):
         row_object: models.Model = self.data
         if row_object:
             keys = row_object._fields.keys()
-            values = (str(getattr(row_object, k)) for k in keys)
+            values = [str(getattr(row_object, k)) for k in keys]
             self.table = TableView(
                 ['key', 'value'],
                 list(zip(keys, values)),
                 border_style=self.border_style,
                 selection=selection
             )
+            self.selectables = self.table.rows
             self.panel_view = self.table
             layout.update(self.table)
 

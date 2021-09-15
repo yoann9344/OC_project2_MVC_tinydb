@@ -36,7 +36,9 @@ class ScoresLayoutController(TableLayoutController):
         *args,
         **kwargs,
     ):
-        super(LayoutController, self).__init__(*args, **kwargs)
+        LayoutController.__init__(self, *args, **kwargs)
+        # super(LayoutController, self).__init__(*args, **kwargs)
+        # super().__init__(*args, model=Score, headers=['classement', 'player', 'score'], **kwargs)
         self.shortcuts = {
             # 'k': self.up,
             # 'j': self.down,

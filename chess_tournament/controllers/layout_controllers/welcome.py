@@ -18,6 +18,7 @@ class WelcomeLayoutController(LayoutController):
             ## Bienvenu dans l'application de gestion de tournois d'échecs !
             - Pour créer une nouveau tournoi cliquez sur <T>.
             - Pour voir la liste des tournois cliquez sur <t>.
+            - Pour ajouter un nouveau joueur cliquez sur <P>.
             - Pour voir la liste des joueurs cliquez sur <p>.
         ''')
         self.panel_view = Panel(
@@ -33,6 +34,7 @@ class WelcomeLayoutController(LayoutController):
         self.shortcuts = {
             'T': self.new_tournament,
             't': self.show_tournaments,
+            'P': self.new_player,
             'p': self.show_players,
         }
 
@@ -48,6 +50,19 @@ class WelcomeLayoutController(LayoutController):
 
         self.page.loop.go_to(
             TournamentCreatorPage(
+                loop=self.page.loop,
+            )
+        )
+
+    def new_player(self):
+        """Go to page create player.
+
+        shortcut_name = Ajouter un joueur
+        """
+        from ..pages import PlayerCreatorPage
+
+        self.page.loop.go_to(
+            PlayerCreatorPage(
                 loop=self.page.loop,
             )
         )
@@ -97,6 +112,6 @@ class WelcomeLayoutController(LayoutController):
             TablePage(
                 loop=self.page.loop,
                 model=mymodels.Player,
-                headers=['id', 'name', 'firstname'],
+                headers=['id', 'name', 'firstname', 'rank'],
             )
         )

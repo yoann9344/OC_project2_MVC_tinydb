@@ -94,12 +94,21 @@ class MainController(_Browser):
             'w': self.go_backward,
             'x': self.go_foreward,
             'q': self.quit_dialog,
+            'M': self.go_to_menu,
         }
         Page.loop = self
-        super().__init__(WelcomPage())
+        self.menu = WelcomPage()
+        super().__init__(self.menu)
         self.edition_mode = False
         self.buffer = ''
         self.edition_callback = None
+
+    def go_to_menu(self):
+        """Go back to the menu.
+
+        shortcut_name = Retourner au menu principal
+        """
+        self.go_to(self.menu)
 
     def quit_dialog(self):
         """Open quit dialog.

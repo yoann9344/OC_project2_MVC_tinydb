@@ -3,7 +3,7 @@ import abc
 
 class EditablePlugin(abc.ABC):
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.editable_callback = None
         self.editable_activated = False
 
